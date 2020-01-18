@@ -1,0 +1,27 @@
+{
+    "sources": {
+        "c:/Users/Riccardo/Documents/GitHub/avantasia/src/helloworld.sol": {
+            "ast": {
+                "absolutePath": "c:/Users/Riccardo/Documents/GitHub/avantasia/src/helloworld.sol",
+                "exportedSymbols": {},
+                "id": 2,
+                "nodeType": "SourceUnit",
+                "nodes": [
+                    {
+                        "id": 1,
+                        "literals": [
+                            "solidity",
+                            "^",
+                            "0.6",
+                            ".1"
+                        ],
+                        "nodeType": "PragmaDirective",
+                        "src": "0:23:0"
+                    }
+                ],
+                "src": "0:23:0"
+            },
+            "id": 0
+        }
+    }
+}
