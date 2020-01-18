@@ -9,21 +9,21 @@ import Banner from './banner.jpg';
 import messages from './messages';
 
 function Header() {
-  return (
-    <div>
-      <A href="https://www.reactboilerplate.com/">
-        <Img src={Banner} alt="react-boilerplate - Logo" />
-      </A>
-      <NavBar>
-        <HeaderLink to="/">
-          <FormattedMessage {...messages.home} />
-        </HeaderLink>
-        <HeaderLink to="/features">
-          <FormattedMessage {...messages.features} />
-        </HeaderLink>
-      </NavBar>
-    </div>
-  );
+    return (
+        <div>
+            <NavBar>
+                <HeaderLink to="/">
+                    <FormattedMessage {...messages.home} />
+                </HeaderLink>
+                <HeaderLink to="/features">
+                    <FormattedMessage {...messages.features} />
+                </HeaderLink>
+                <HeaderLink to="/bsmessage">
+                    <FormattedMessage {...messages.bsmessage} />
+                </HeaderLink>
+            </NavBar>
+        </div>
+    );
 }
 
 export default Header;

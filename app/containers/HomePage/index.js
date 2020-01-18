@@ -59,7 +59,7 @@ export function HomePage({
 
   return (
     <article>
-      <Helmet>
+      {/* <Helmet>
         <title>Home Page</title>
         <meta
           name="description"
@@ -96,7 +96,7 @@ export function HomePage({
           </Form>
           <ReposList {...reposListProps} />
         </Section>
-      </div>
+      </div> */}
     </article>
   );
 }
