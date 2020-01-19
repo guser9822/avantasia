@@ -8,7 +8,8 @@
  */
 
 import produce from 'immer';
-import { LOAD_REPOS_SUCCESS, LOAD_REPOS, LOAD_REPOS_ERROR } from './constants';
+import { LOAD_REPOS_SUCCESS, LOAD_REPOS, LOAD_REPOS_ERROR, CREATE_WEB3_INSTANCE } from './constants';
+import Web3 from 'web3';
 
 // The initial state of the App
 export const initialState = {
@@ -18,6 +19,7 @@ export const initialState = {
   userData: {
     repositories: false,
   },
+  web3 : undefined
 };
 
 /* eslint-disable default-case, no-param-reassign */
@@ -39,6 +41,10 @@ const appReducer = (state = initialState, action) =>
       case LOAD_REPOS_ERROR:
         draft.error = action.error;
         draft.loading = false;
+        break;
+
+    case CREATE_WEB3_INSTANCE:
+        draft.web3 = new Web3(action.provider)
         break;
     }
   });
