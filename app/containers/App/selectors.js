@@ -39,18 +39,11 @@ const makeSelectLocation = () =>
     routerState => routerState.location,
   );
 
-const makeWeb3 = () =>
-  createSelector(
-    selectGlobal,
-    globalState => globalState.web3,
-  );
-
 export {
   selectGlobal,
   makeSelectCurrentUser,
   makeSelectLoading,
   makeSelectError,
   makeSelectRepos,
-  makeSelectLocation,
-  makeWeb3,
+  makeSelectLocation
 };

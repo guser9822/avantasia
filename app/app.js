@@ -16,7 +16,6 @@ import { ConnectedRouter } from 'connected-react-router';
 import FontFaceObserver from 'fontfaceobserver';
 import history from 'utils/history';
 import 'sanitize.css/sanitize.css';
-import Web3 from 'web3'
 
 // Import root app
 import App from 'containers/App';
@@ -47,9 +46,6 @@ openSansObserver.load().then(() => {
 const initialState = {};
 const store = configureStore(initialState, history);
 const MOUNT_NODE = document.getElementById('app');
-
-//TO REFACTOR
-store.dispatch(createWeb3Instance(Web3.givenProvider))
 
 const render = messages => {
   ReactDOM.render(

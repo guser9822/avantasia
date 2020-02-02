@@ -36,18 +36,12 @@ const AppWrapper = styled.div`
   flex-direction: column;
 `;
 
-class App extends React.Component {
+export default class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      web3: undefined
-    };
   }
 
-  componentDidMount() {
-    this.state.web3 = this.props.web3
-  }
 
   render() {
     return (
@@ -66,14 +60,3 @@ class App extends React.Component {
   }
 
 }
-
-const mapStateToProps = createStructuredSelector({
-  web3: makeWeb3()
-});
-
-
-const withConnect = connect(
-  mapStateToProps,
-);
-
-export default compose(withConnect, connect(mapStateToProps))(App);
