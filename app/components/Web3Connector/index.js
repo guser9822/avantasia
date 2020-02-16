@@ -8,7 +8,7 @@ export default class Web3Connector extends React.Component {
         super(props);
         this.state = {
             ethereum: window.ethereum,
-            authorized: false
+            authorized: window.sessionStorage.getItem('authorized') ? true : false, 
         };
     }
 
