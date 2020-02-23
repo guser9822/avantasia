@@ -1,7 +1,6 @@
 import React from 'react';
 import Web3Connector from '../../components/Web3Connector'
 
-
 import Web3 from 'web3'
 
 import FaucetJSON from '../../../bin/src/helloworld/Faucet.json'
@@ -17,14 +16,19 @@ export default class BlockChainCC extends React.Component {
             authorized: window.sessionStorage.getItem('authorized') ? true : false,
             web3: window.sessionStorage.getItem('authorized') ? new Web3(Web3.givenProvider) : undefined,
             contractName: "",
-            contractAddress: undefined
+            contractAddress: undefined,
+            userAddress: window.sessionStorage.getItem('userAddress') 
         }
     }
 
-    onAuthorization = (auth) => {
-        this.setState({ web3: new Web3(Web3.givenProvider) })
-        this.setState({ authorized: true })
-        window.sessionStorage.setItem('authorized', this.state.authorized)
+    onAuthorization = (_userAddress) => {
+        this.setState({
+            web3: new Web3(Web3.givenProvider) ,
+            authorized: true,
+            userAddress: _userAddress[0],
+        })
+        window.sessionStorage.setItem('authorized', true)
+        window.sessionStorage.setItem('userAddress',_userAddress[0])
     }
 
     onDeployContractClick = () => {
@@ -35,7 +39,6 @@ export default class BlockChainCC extends React.Component {
             const contrName = this.state.contractName
             let selecteContractJSON = undefined
             let selectedContractName = undefined
-
             if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
                 selecteContractJSON = FaucetJSON
                 selectedContractName = FAUCET_CONTRACT_NAME
@@ -110,42 +113,29 @@ export default class BlockChainCC extends React.Component {
 
     onEstimationClick = () => {
         const contrName = this.state.contractName
-
-        if(! this.state.contractAddress){
+        const contrAdress = this.state.contractAddress
+        const userAddr = this.state.userAddress
+        const web3 = this.state.web3
+        if(!contrAdress ){
             console.log('Error, no contract address found ')
             return
         }
 
         let selectedContractABI = undefined
         if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedContractABI = FaucetABI
+            selectedContractABI = FaucetJSON.abi
         }
 
         if( ! selectedContractABI){
             console.log('Error, no contract ABI found for contract named ', contrName)
             return
         }
-        
-        console.log('ABI :', selectedContractABI)
-        //var contract = web3.eth.contract(abi).at(address);
-
+        console.log('web3 ',web3)
+        var contract = web3.eth.contract(selectedContractABI).at(contrAdress);
+        var gasEstimate = contract.withdraw.estimateGas(web3.utils.toWei(0.1, "ether"));
+        console.log('gas estimation : ', gasEstimate)
     }
 
-
-    readFile = () => {
-        var openFile = function(event) {
-            var input = event.target;
-    
-            var reader = new FileReader();
-            reader.onload = function(){
-              var text = reader.result;
-              var node = document.getElementById('output');
-              node.innerText = text;
-              console.log(reader.result.substring(0, 200));
-            };
-            reader.readAsText(input.files[0]);
-          };
-    }
 
     render() {
 
