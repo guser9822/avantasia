@@ -1,7 +1,6 @@
 import React from 'react';
 
-/* import Quiz from '../../components/Quiz'
- */
+
 export default class Web3Connector extends React.Component {
 
     constructor(props) {
