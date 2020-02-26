@@ -17,18 +17,18 @@ export default class BlockChainCC extends React.Component {
             web3: window.sessionStorage.getItem('authorized') ? new Web3(Web3.givenProvider) : undefined,
             contractName: "",
             contractAddress: undefined,
-            userAddress: window.sessionStorage.getItem('userAddress') 
+            userAddress: window.sessionStorage.getItem('userAddress')
         }
     }
 
     onAuthorization = (_userAddress) => {
         this.setState({
-            web3: new Web3(Web3.givenProvider) ,
+            web3: new Web3(Web3.givenProvider),
             authorized: true,
             userAddress: _userAddress[0],
         })
         window.sessionStorage.setItem('authorized', true)
-        window.sessionStorage.setItem('userAddress',_userAddress[0])
+        window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
     onDeployContractClick = () => {
@@ -99,7 +99,7 @@ export default class BlockChainCC extends React.Component {
 
     selectContractComponent = () => {
         const contractAddress = this.state.contractAddress
-        if (! contractAddress) {
+        if (!contractAddress) {
             return
         }
 
@@ -116,7 +116,7 @@ export default class BlockChainCC extends React.Component {
         const contrAdress = this.state.contractAddress
         const userAddr = this.state.userAddress
         const web3 = this.state.web3
-        if(!contrAdress ){
+        if (!contrAdress) {
             console.log('Error, no contract address found ')
             return
         }
@@ -126,14 +126,41 @@ export default class BlockChainCC extends React.Component {
             selectedContractABI = FaucetJSON.abi
         }
 
-        if( ! selectedContractABI){
+        if (!selectedContractABI) {
             console.log('Error, no contract ABI found for contract named ', contrName)
             return
         }
-        console.log('web3 ',web3)
-        var contract = web3.eth.contract(selectedContractABI).at(contrAdress);
-        var gasEstimate = contract.withdraw.estimateGas(web3.utils.toWei(0.1, "ether"));
-        console.log('gas estimation : ', gasEstimate)
+
+        const newContract = new web3.eth.Contract(selectedContractABI, contrAdress,
+            {
+                from: userAddr, // default from address
+                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
+
+            });
+
+        //1*10^4 = 10000000000000000 -> 0.0001 ether
+        newContract.methods.withdraw(0). //TODO Error if withdraw > 0 , faucet is empty, refill 
+            estimateGas({
+                from: userAddr,
+                gas: 5000000,
+            }).
+            then(gas => {
+                console.log('GAS : ', gas)
+            }).catch(err => {
+                console.log('ERROR ', err)
+            })
+
+        // using the callback
+        /*         newContract.methods.withdraw(123).estimateGas({ gas: 5000000 }, function (error, gasAmount) {
+        
+                    if(error){
+                        console.log('error in ',error)
+                    }
+        
+                    if (gasAmount == 5000000)
+                        console.log('Method ran out of gas');
+                }); */
+
     }
 
 
