@@ -31,10 +31,13 @@ export default class Web3Connector extends React.Component {
     }
 
     render() {
+
+        const info = ! this.state.authorized ? <button onClick={this.onClickConnect}
+        disabled={this.state.authorized}>Connect</button> : <p> CONNECTED </p> 
+
         return (
             <article>
-                <button onClick={this.onClickConnect}
-                    disabled={this.state.authorized}>Connect</button>
+                {info}
             </article>
         );
     }

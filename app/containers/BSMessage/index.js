@@ -99,14 +99,19 @@ export default class BlockChainCC extends React.Component {
 
     selectContractComponent = () => {
         const contractAddress = this.state.contractAddress
-        if (!contractAddress) {
+        const userAddr = this.state.userAddress
+        const web3 = this.state.web3
+        if (!contractAddress || ! userAddr || ! web3) {
             return
         }
 
         let selectedComponent = undefined
         const contrName = this.state.contractName
         if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedComponent = <Faucet address={contractAddress}></Faucet>
+            selectedComponent = <Faucet userAddress={userAddr} 
+            contractAddress={contractAddress} 
+            json={FaucetJSON}
+            web3={web3}></Faucet>
         }
         return selectedComponent
     }
@@ -171,7 +176,7 @@ export default class BlockChainCC extends React.Component {
         return (
             <article>
                 <div>
-                    <p>Ethereum dashboard : </p>
+                    <h2>Ethereum dashboard : </h2>
                     <Web3Connector authorization={this.onAuthorization} />
                     <label>Contract name : </label>
                     <input type="text" value={this.state.contractName} onChange={this.onChangeContractName}></input>

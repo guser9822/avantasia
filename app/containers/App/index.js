@@ -53,7 +53,6 @@ export default class App extends React.Component {
           <Route path="/bsmessage" component={BSMessage} />
           <Route path="" component={NotFoundPage} />
         </Switch>
-        <Footer />
         <GlobalStyle />
       </AppWrapper>
     );
