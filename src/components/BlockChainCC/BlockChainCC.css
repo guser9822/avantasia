@@ -1,0 +1,42 @@
+.Intes-Block{
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+.ContractInfo-Block {
+    display: flex;
+    flex-direction: column;
+    border: 2px;
+    border-style: solid;
+    border-radius: 5px;
+    padding: 10px 10px 10px 10px;
+}
+
+.Descrpt-Label {
+    margin-bottom: 15px;
+}
+
+.ContractOperation-Block {
+    display: flex;
+    justify-content: space-around;
+    border: 2px;
+    border-style: solid;
+    border-radius: 5px;
+    padding: 10px 10px 10px 10px;
+}
+
+.Status-Block {
+    width: 25px;
+    height: 25px;
+    border-radius: 60px;
+    margin-left: 20px;
+}
+
+.Status-Block.Connected {
+    background-color: green;
+}
+
+.Status-Block.Disconnected {
+    background-color: red;
+}
