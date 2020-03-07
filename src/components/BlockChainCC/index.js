@@ -1,7 +1,7 @@
 import './BlockChainCC.css'
 import React from 'react';
 import Web3Connector from '../Web3Connector/index'
-
+import Modal from '../Modal/index'
 import Web3 from 'web3'
 
 import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
@@ -19,7 +19,8 @@ export default class BlockChainCC extends React.Component {
             contractName: "",
             contractAddress: "",
             userAddress: window.sessionStorage.getItem('userAddress'),
-            selectedContractComponent: void undefined
+            selectedContractComponent: void undefined,
+            showDestroyModal : true,
         }
     }
 
@@ -103,7 +104,7 @@ export default class BlockChainCC extends React.Component {
         }
 
         if (!selectedContractName) {
-            console.log('Sorry, no contract with name ' + contrName + ' found')
+            console.log(' :( , no contract with name ' + contrName + ' found')
             return
         }
         const foundContractAddress = window.localStorage.getItem(selectedContractName)
@@ -177,9 +178,14 @@ export default class BlockChainCC extends React.Component {
 
     }
 
+    onDestroyClick = () => {
+
+    }
+
 
     render() {
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
+        const destroyModal = this.state.showDestroyModal ? <Modal /> : undefined
         return (
             <article>
                 <div>
@@ -200,9 +206,11 @@ export default class BlockChainCC extends React.Component {
                         <button onClick={this.onEstimationClick} disabled={this.disableOperationButton()}>Estimate creation</button>
                         <button onClick={this.onDeployContractClick} disabled={this.disableOperationButton()}>Create the contract</button>
                         <button onClick={this.onLoadContractClick} disabled={this.disableOperationButton()}>Load latest version</button>
+                        <button onClick={this.onDestroyClick} disabled={void(0)}>Destroy a contract</button>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
+                {destroyModal}
             </article>
         );
     }
