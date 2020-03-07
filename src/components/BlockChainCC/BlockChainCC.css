@@ -2,12 +2,16 @@
     display: flex;
     width: 100%;
     align-items: center;
+    border: 1px;
+    border-style: solid;
+    border-radius: 5px;
+    margin-bottom: 20px;
 }
 
 .ContractInfo-Block {
     display: flex;
     flex-direction: column;
-    border: 2px;
+    border: 1px;
     border-style: solid;
     border-radius: 5px;
     padding: 10px 10px 10px 10px;
@@ -20,7 +24,7 @@
 .ContractOperation-Block {
     display: flex;
     justify-content: space-around;
-    border: 2px;
+    border: 1px;
     border-style: solid;
     border-radius: 5px;
     padding: 10px 10px 10px 10px;
@@ -39,4 +43,10 @@
 
 .Status-Block.Disconnected {
     background-color: red;
+}
+
+.Component-Container {
+    border: 1px;
+    border-style: solid;
+    border-radius: 5px;
 }

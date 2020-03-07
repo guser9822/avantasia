@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './Web3Connector.css'
 
 export default class Web3Connector extends React.Component {
 
@@ -31,11 +31,15 @@ export default class Web3Connector extends React.Component {
     }
 
     render() {
-        const showButton = !this.state.authorized ? <button onClick={this.onClickConnect}
-            disabled={this.state.authorized}>Connect</button> : void undefined
+        const showButton = !this.state.authorized ? 
+        <button onClick={this.onClickConnect} 
+            disabled={this.state.authorized}
+            >Connect</button> : void undefined
         return (
             <article>
-                {showButton}
+                <div className="Connect-Button">
+                    {showButton}
+                </div>
             </article>
         );
     }
