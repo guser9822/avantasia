@@ -1,20 +1,20 @@
 import React from 'react';
 import './Modal.css'
-
-export default class Modal extends React.Component {
-
-    constructor(props) {
-        super(props);
-        this.state = {
+function Modal(WrappedComponent) {
+    return class extends React.Component {
+        render() {
+            return (
+                <div className="ModalSpace">
+                    <div className="ModalContent">
+                        <WrappedComponent />
+                        <div className="ModalContent-Footer">
+                            <button onClick={void(0)} disabled={void(0)}>Ok</button>
+                            <button onClick={void(0)} disabled={void(0)}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )
         }
     }
-
-    render() {
-        return (
-            <div className="ModalContent">
-
-            </div>
-        )
-    }
-
 }
+export default Modal

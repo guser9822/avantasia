@@ -1,11 +1,20 @@
-.ModalContent {
-    width: 200px;
-    height: 200px;
-    border: 4px solid rgb(39, 83, 85);
-    background-color: rgb(51, 92, 56);
+.ModalSpace {
+    width: 50%;
+    height: 40%;
+    border: 2px solid black;
+    background-color: rgba(255,255,255,0.9);
+    border-radius: 10px;
     z-index: 100;
     position: fixed;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+}
+
+.ModalContent{
+
+}
+
+.ModalContent-Footer{
+
 }

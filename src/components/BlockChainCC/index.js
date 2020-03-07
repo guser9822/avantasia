@@ -3,12 +3,13 @@ import React from 'react';
 import Web3Connector from '../Web3Connector/index'
 import Modal from '../Modal/index'
 import Web3 from 'web3'
+import DestroyModal from '../DestroyModal/index'
 
 import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
 import Faucet from '../Faucet'
 const FAUCET_CONTRACT_NAME = "faucet"
 
-
+const MyModal = Modal(DestroyModal)
 export default class BlockChainCC extends React.Component {
 
     constructor(props) {
@@ -185,7 +186,6 @@ export default class BlockChainCC extends React.Component {
 
     render() {
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
-        const destroyModal = this.state.showDestroyModal ? <Modal /> : undefined
         return (
             <article>
                 <div>
@@ -210,7 +210,7 @@ export default class BlockChainCC extends React.Component {
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
-                {destroyModal}
+                <MyModal />
             </article>
         );
     }
