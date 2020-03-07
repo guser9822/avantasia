@@ -161,7 +161,6 @@ export default class BlockChainCC extends React.Component {
             {
                 from: userAddr, // default from address
                 gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-
             });
 
         //1*10^4 = 10000000000000000 -> 0.0001 ether

@@ -8,7 +8,6 @@ contract Faucet {
 
 	address owner;
 
-
     modifier onlyOwner {
         require(msg.sender == owner, "Only the contract owner can destroy it.");
         _;
@@ -34,6 +33,12 @@ contract Faucet {
         emit Withdrawal(msg.sender, withdraw_amount);
     }
     
+    //Get faucet balance
+    function getBalance() view public returns (uint balance) {
+        return address(this).balance;
+    }
+
+
     // Invoked when no function match. If non- payable transaction will revert
     fallback() external {}
 
