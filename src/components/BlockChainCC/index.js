@@ -9,7 +9,7 @@ import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
 import Faucet from '../Faucet'
 const FAUCET_CONTRACT_NAME = "faucet"
 
-const MyModal = Modal(DestroyModal)
+const DestroyContractModal = Modal(DestroyModal)
 export default class BlockChainCC extends React.Component {
 
     constructor(props) {
@@ -21,11 +21,11 @@ export default class BlockChainCC extends React.Component {
             contractAddress: "",
             userAddress: window.sessionStorage.getItem('userAddress'),
             selectedContractComponent: void undefined,
-            showDestroyModal : true,
+            showDestroyModal: false,
         }
     }
 
-    onAuthorization = (_userAddress) => {
+    authorizationHandle = (_userAddress) => {
         this.setState({
             web3: new Web3(Web3.givenProvider),
             authorized: true,
@@ -35,7 +35,7 @@ export default class BlockChainCC extends React.Component {
         window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
-    onDeployContractClick = () => {
+    deployContractClickHandle = () => {
         const web3 = this.state.web3
         web3.eth.getAccounts().then(accounts => {
             return accounts[0]
@@ -75,19 +75,19 @@ export default class BlockChainCC extends React.Component {
             })
     }
 
-    onChangeContractName = (event) => {
+    changeContractNameHandle = (event) => {
         this.setState({
             contractName: event.target.value
         })
     }
 
-    onChangeContractAddress = (event) => {
+    changeContractAddressHandle = (event) => {
         this.setState({
             contractAddress: event.target.value
         })
     }
 
-    onLoadContractClick = () => {
+    loadContractClickHandle = () => {
         let selectedContractName = undefined
         const contractAddressInput = this.state.contractAddress
         const contrName = this.state.contractName
@@ -139,7 +139,11 @@ export default class BlockChainCC extends React.Component {
         return !this.state.authorized || !this.state.contractName.length
     }
 
-    onEstimationClick = () => {
+    isAuthorized = () => {
+        return this.state.authorized
+    }
+
+    estimationClickHandle = () => {
         const contrName = this.state.contractName
         const contrAdress = this.state.contractAddress
         const userAddr = this.state.userAddress
@@ -179,10 +183,29 @@ export default class BlockChainCC extends React.Component {
 
     }
 
-    onDestroyClick = () => {
-
+    destroyClickHandle = () => {
+        const showDestroyState = !this.state.showDestroyModal
+        this.setState({ showDestroyModal: showDestroyState })
     }
 
+    destroyCancelClickCancel = () => {
+        this.setState({ showDestroyModal: false })
+    }
+
+    destroyConfirmClickHandle = (params) => {
+        this.setState({ showDestroyModal: false })
+
+        const contractName = params[0]
+        const contractAddress = params[1]
+
+        let selectedContractABI = undefined
+        if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
+            selectedContractABI = FaucetJSON.abi
+        }
+
+        
+
+    }
 
     render() {
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
@@ -193,24 +216,28 @@ export default class BlockChainCC extends React.Component {
                         <h1> Ethereum dashboard </h1>
                         <div className={statusClass}></div>
                     </div>
-                    <Web3Connector authorization={this.onAuthorization} />
+                    <Web3Connector authorization={this.authorizationHandle} />
                     <div className="ContractInfo-Block">
                         <label className="Descrpt-Label"> Contract info : Input name or address of the contract to operate on it</label>
                         <label>Name : </label>
-                        <input disabled={!this.state.authorized} type="text" value={this.state.contractName} onChange={this.onChangeContractName}></input>
+                        <input disabled={!this.state.authorized} type="text" value={this.state.contractName} onChange={this.changeContractNameHandle} />
                         <label>Address : </label>
-                        <input disabled={!this.state.authorized} type="text" value={this.state.contractAddress} onChange={this.onChangeContractAddress}></input>
+                        <input disabled={!this.state.authorized} type="text" value={this.state.contractAddress} onChange={this.changeContractAddressHandle} />
                     </div>
                     <br />
                     <div className="ContractOperation-Block">
-                        <button onClick={this.onEstimationClick} disabled={this.disableOperationButton()}>Estimate creation</button>
-                        <button onClick={this.onDeployContractClick} disabled={this.disableOperationButton()}>Create the contract</button>
-                        <button onClick={this.onLoadContractClick} disabled={this.disableOperationButton()}>Load latest version</button>
-                        <button onClick={this.onDestroyClick} disabled={void(0)}>Destroy a contract</button>
+                        <button onClick={this.estimationClickHandle} disabled={this.disableOperationButton()}>Estimate creation</button>
+                        <button onClick={this.deployContractClickHandle} disabled={this.disableOperationButton()}>Create the contract</button>
+                        <button onClick={this.loadContractClickHandle} disabled={this.disableOperationButton()}>Load latest version</button>
+                        <button onClick={this.destroyClickHandle} disabled={!this.isAuthorized}>Destroy a contract</button>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
-                <MyModal />
+                <DestroyContractModal
+                    showModal={this.state.showDestroyModal}
+                    onCancel={this.destroyCancelClickCancel}
+                    onConfirm={this.destroyConfirmClickHandle}
+                />
             </article>
         );
     }
