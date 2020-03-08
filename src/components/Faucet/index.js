@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './Faucet.css'
 const WITHDRAW = 'withdraw';
 const DEPOSIT = 'deposit';
 const BALANCE = 'balance';
@@ -82,7 +82,7 @@ export default class Faucet extends React.Component {
             gasPrice: 200000000000,
         }).then(res => {
             console.log('Faucet balance : ', res)
-            const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME)
+            const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME) +' ETH'
             this.setState({
                 faucetBalance: balanceInEther,
             })
@@ -97,13 +97,15 @@ export default class Faucet extends React.Component {
     render() {
         return (
             <article>
-                <h3>Faucet Component</h3>
-                <p>Faucet balance : {this.state.faucetBalance} </p>
-                <label>Amount: </label>
-                <input type="number" value={this.state.amount} onChange={this.onChangeAmount} min="0"></input>
-                <button onClick={() => this.onOperationClick(BALANCE)}>Balance</button>
-                <button onClick={() => this.onOperationClick(WITHDRAW)}>Withdraw</button>
-                <button onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
+                <div className="Faucet">
+                    <h3>Faucet Component</h3>
+                    <p>Faucet balance : {this.state.faucetBalance} </p>
+                    <label>Amount: </label>
+                    <input type="number" value={this.state.amount} onChange={this.onChangeAmount} min="0"></input>
+                    <button onClick={() => this.onOperationClick(BALANCE)}>Balance</button>
+                    <button onClick={() => this.onOperationClick(WITHDRAW)}>Withdraw</button>
+                    <button onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
+                </div>
             </article>
         );
     }

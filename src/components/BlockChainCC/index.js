@@ -20,7 +20,7 @@ export default class BlockChainCC extends React.Component {
             contractName: "",
             contractAddress: "",
             userAddress: window.sessionStorage.getItem('userAddress'),
-            selectedContractComponent: void undefined,
+            selectedContractComponent: void undefined,            
             showDestroyModal: false,
         }
     }
@@ -154,23 +154,32 @@ export default class BlockChainCC extends React.Component {
         }
 
         let selectedContractABI = undefined
+        let selectedContractBytecode = undefined
         if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
             selectedContractABI = FaucetJSON.abi
+            selectedContractBytecode = '0x'+FaucetJSON.bytecode
         }
 
         if (!selectedContractABI) {
             console.log('Error, no contract ABI found for contract named ', contrName)
             return
         }
-
         const newContract = new web3.eth.Contract(selectedContractABI, contrAdress,
             {
                 from: userAddr, // default from address
                 gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
             });
 
+        newContract.
+            deploy({data: selectedContractBytecode}).
+                estimateGas().then(gas => {
+                    console.log('GAS : ', gas)
+                }).catch(err => {
+                    console.log('ERROR ', err)
+                })
+//console.log('Contract data ', newContract)
         //1*10^4 = 10000000000000000 -> 0.0001 ether
-        newContract.methods.withdraw(0). //TODO Error if withdraw > 0 , faucet is empty, refill 
+/*         newContract.methods.withdraw(100). //TODO Error if withdraw > 0 , faucet is empty, refill 
             estimateGas({
                 from: userAddr,
                 gas: 5000000,
@@ -179,7 +188,7 @@ export default class BlockChainCC extends React.Component {
                 console.log('GAS : ', gas)
             }).catch(err => {
                 console.log('ERROR ', err)
-            })
+            }) */
 
     }
 
@@ -213,24 +222,29 @@ export default class BlockChainCC extends React.Component {
                     from: userAddress, // default from address
                     gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
                 })
+        }
+
+        if(! contractInstance){
+            console.log('Error, no instance created for contract ', contractName)
+        }
+
             /**
              * Use send for deleting a contract, it will generate a transaction
              * (it will modofy the contract state) and the owner will get back his
              * money
              * **/
             contractInstance.methods.destroy().send({
-                    from: userAddress,
-                    gas: 300000,//TODO GAS LIMIT, to estimate!
-                    gasPrice: 200000000000,
-                }).
-                then((res) => {
-                    console.log('Contract ' + contractName + ' at ' + contractAddress + ' destroyed!')
-                    console.log('Resp ',res)
-                }).
-                catch((err) => {
-                    console.log('Error destroiyng ' + contractName + ' at ' + contractAddress + ': ' + err)
-                })
-        }
+                from: userAddress,
+                gas: 300000,//TODO GAS LIMIT, to estimate!
+                gasPrice: 200000000000,
+            }).
+            then((res) => {
+                console.log('Contract ' + contractName + ' at ' + contractAddress + ' destroyed!')
+                console.log('Resp ',res)
+            }).
+            catch((err) => {
+                console.log('Error destroiyng ' + contractName + ' at ' + contractAddress + ': ' + err)
+            })
 
     }
 
