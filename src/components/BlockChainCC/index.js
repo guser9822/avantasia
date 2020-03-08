@@ -20,7 +20,11 @@ export default class BlockChainCC extends React.Component {
             contractName: "",
             contractAddress: "",
             userAddress: window.sessionStorage.getItem('userAddress'),
-            selectedContractComponent: void undefined,            
+            selectedContractComponent: void undefined,
+            selecteContractJSON: undefined,
+            selectedContractName: undefined,
+            selectedContractABI: undefined,
+            selectedContractBytecode: undefined,
             showDestroyModal: false,
         }
     }
@@ -35,25 +39,42 @@ export default class BlockChainCC extends React.Component {
         window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
+    switchContract = (contractName) => {
+
+        if (!contractName || !contractName.length) {
+            console.error('Invalid contract name given in input.')
+            return
+        }
+        let ok = false
+        if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
+            this.setState({
+                selectedContractComponent: void undefined,
+                selecteContractJSON: FaucetJSON,
+                selectedContractName: FAUCET_CONTRACT_NAME,
+                selectedContractABI: FaucetJSON.abi,
+                selectedContractBytecode: FaucetJSON.bytecode,
+            })
+            ok = true;
+        }
+
+        if (!ok) {
+            console.error('No contract found with name ', contractName)
+        }
+
+        return ok
+    }
+
     deployContractClickHandle = () => {
         const web3 = this.state.web3
         web3.eth.getAccounts().then(accounts => {
             return accounts[0]
         }).then(userAccount => {
-            const contrName = this.state.contractName
-            let selecteContractJSON = undefined
-            let selectedContractName = undefined
-            if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-                selecteContractJSON = FaucetJSON
-                selectedContractName = FAUCET_CONTRACT_NAME
-            }
 
-            if (!selecteContractJSON) {
-                console.log('Error, no contract found with name : ', contrName)
+            if (!this.switchContract(this.state.contractName)) {
                 return
             }
 
-            this.deployContract(selectedContractName, userAccount, selecteContractJSON.bytecode)
+            this.deployContract(this.state.selectedContractName, userAccount, this.state.selectedContractBytecode)
         }).catch((err) => console.log(err))
     }
 
@@ -157,7 +178,7 @@ export default class BlockChainCC extends React.Component {
         let selectedContractBytecode = undefined
         if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
             selectedContractABI = FaucetJSON.abi
-            selectedContractBytecode = '0x'+FaucetJSON.bytecode
+            selectedContractBytecode = '0x' + FaucetJSON.bytecode
         }
 
         if (!selectedContractABI) {
@@ -171,24 +192,24 @@ export default class BlockChainCC extends React.Component {
             });
 
         newContract.
-            deploy({data: selectedContractBytecode}).
-                estimateGas().then(gas => {
-                    console.log('GAS : ', gas)
-                }).catch(err => {
-                    console.log('ERROR ', err)
-                })
-//console.log('Contract data ', newContract)
-        //1*10^4 = 10000000000000000 -> 0.0001 ether
-/*         newContract.methods.withdraw(100). //TODO Error if withdraw > 0 , faucet is empty, refill 
-            estimateGas({
-                from: userAddr,
-                gas: 5000000,
-            }).
-            then(gas => {
+            deploy({ data: selectedContractBytecode }).
+            estimateGas().then(gas => {
                 console.log('GAS : ', gas)
             }).catch(err => {
                 console.log('ERROR ', err)
-            }) */
+            })
+        //console.log('Contract data ', newContract)
+        //1*10^4 = 10000000000000000 -> 0.0001 ether
+        /*         newContract.methods.withdraw(100). //TODO Error if withdraw > 0 , faucet is empty, refill 
+                    estimateGas({
+                        from: userAddr,
+                        gas: 5000000,
+                    }).
+                    then(gas => {
+                        console.log('GAS : ', gas)
+                    }).catch(err => {
+                        console.log('ERROR ', err)
+                    }) */
 
     }
 
@@ -224,23 +245,23 @@ export default class BlockChainCC extends React.Component {
                 })
         }
 
-        if(! contractInstance){
+        if (!contractInstance) {
             console.log('Error, no instance created for contract ', contractName)
         }
 
-            /**
-             * Use send for deleting a contract, it will generate a transaction
-             * (it will modofy the contract state) and the owner will get back his
-             * money
-             * **/
-            contractInstance.methods.destroy().send({
-                from: userAddress,
-                gas: 300000,//TODO GAS LIMIT, to estimate!
-                gasPrice: 200000000000,
-            }).
+        /**
+         * Use send for deleting a contract, it will generate a transaction
+         * (it will modofy the contract state) and the owner will get back his
+         * money
+         * **/
+        contractInstance.methods.destroy().send({
+            from: userAddress,
+            gas: 300000,//TODO GAS LIMIT, to estimate!
+            gasPrice: 200000000000,
+        }).
             then((res) => {
                 console.log('Contract ' + contractName + ' at ' + contractAddress + ' destroyed!')
-                console.log('Resp ',res)
+                console.log('Resp ', res)
             }).
             catch((err) => {
                 console.log('Error destroiyng ' + contractName + ' at ' + contractAddress + ': ' + err)
