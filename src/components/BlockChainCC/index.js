@@ -25,6 +25,7 @@ export default class BlockChainCC extends React.Component {
             selectedContractName: undefined,
             selectedContractABI: undefined,
             selectedContractBytecode: undefined,
+            selectedContractAddress: "",
             showDestroyModal: false,
         }
     }
@@ -48,11 +49,16 @@ export default class BlockChainCC extends React.Component {
         let ok = false
         if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
             this.setState({
-                selectedContractComponent: void undefined,
+                selectedContractComponent: <Faucet userAddress={this.state.userAddress}
+                                            contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+                                            json={FaucetJSON}
+                                            web3={this.state.web3}></Faucet>,
                 selecteContractJSON: FaucetJSON,
                 selectedContractName: FAUCET_CONTRACT_NAME,
                 selectedContractABI: FaucetJSON.abi,
                 selectedContractBytecode: FaucetJSON.bytecode,
+                selectedContractAddress: window.localStorage.getItem(FAUCET_CONTRACT_NAME),
+                contractAddress: window.localStorage.getItem(FAUCET_CONTRACT_NAME),
             })
             ok = true;
         }
@@ -117,43 +123,16 @@ export default class BlockChainCC extends React.Component {
             contractAddressInput.length &&
             contrName &&
             contrName.length) {
+
             window.localStorage.setItem(selectedContractName, contractAddressInput)
             console.log('Using contract address ' + contractAddressInput + ' for contract name ' + contrName)
-        }
-
-        if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedContractName = FAUCET_CONTRACT_NAME
-        }
-
-        if (!selectedContractName) {
-            console.log(' :( , no contract with name ' + contrName + ' found')
-            return
-        }
-        const foundContractAddress = window.localStorage.getItem(selectedContractName)
-        const generatedComponent = this.selectContractComponent(foundContractAddress)
-        this.setState({
-            contractAddress: foundContractAddress,
-            selectedContractComponent: generatedComponent,
-        })
-    }
-
-    selectContractComponent = (contractAddress) => {
-        const userAddr = this.state.userAddress
-        const web3 = this.state.web3
-        const contrName = this.state.contractName
-
-        if (!contractAddress || !userAddr || !web3) {
             return
         }
 
-        let selectedComponent = undefined
-        if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedComponent = <Faucet userAddress={userAddr}
-                contractAddress={contractAddress}
-                json={FaucetJSON}
-                web3={web3}></Faucet>
+        if (!this.switchContract(contrName)) {
+            return
         }
-        return selectedComponent
+
     }
 
     disableOperationButton = () => {
