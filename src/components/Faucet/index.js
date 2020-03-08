@@ -17,7 +17,7 @@ export default class Faucet extends React.Component {
             web3: props.web3,
             faucetContract: new props.web3.eth.Contract(props.json.abi, props.contractAddress,
                 {
-                    from: props.contractAddress, // default from address
+                    from: props.userAddress, // default from address
                     gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
                 }),
             faucetBalance: undefined,

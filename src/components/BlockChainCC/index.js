@@ -194,16 +194,43 @@ export default class BlockChainCC extends React.Component {
 
     destroyConfirmClickHandle = (params) => {
         this.setState({ showDestroyModal: false })
-
+        const web3 = this.state.web3
+        const userAddress = this.state.userAddress
         const contractName = params[0]
         const contractAddress = params[1]
 
         let selectedContractABI = undefined
+        let contractInstance = undefined
         if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
             selectedContractABI = FaucetJSON.abi
-        }
 
-        
+            if (!selectedContractABI) {
+                console.log('Error, no abi found for contract with name ', contractName)
+            }
+
+            contractInstance = new web3.eth.Contract(selectedContractABI, contractAddress,
+                {
+                    from: userAddress, // default from address
+                    gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
+                })
+            /**
+             * Use send for deleting a contract, it will generate a transaction
+             * (it will modofy the contract state) and the owner will get back his
+             * money
+             * **/
+            contractInstance.methods.destroy().send({
+                    from: userAddress,
+                    gas: 300000,//TODO GAS LIMIT, to estimate!
+                    gasPrice: 200000000000,
+                }).
+                then((res) => {
+                    console.log('Contract ' + contractName + ' at ' + contractAddress + ' destroyed!')
+                    console.log('Resp ',res)
+                }).
+                catch((err) => {
+                    console.log('Error destroiyng ' + contractName + ' at ' + contractAddress + ': ' + err)
+                })
+        }
 
     }
 
