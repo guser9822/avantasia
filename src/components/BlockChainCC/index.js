@@ -189,8 +189,6 @@ export default class BlockChainCC extends React.Component {
 
     destroyConfirmClickHandle = (params) => {
         this.setState({ showDestroyModal: false })
-        const web3 = this.state.web3
-        const userAddress = this.state.userAddress
         const contractName = params[0]
         const contractAddress = params[1]
 
@@ -203,9 +201,9 @@ export default class BlockChainCC extends React.Component {
                 console.log('Error, no abi found for contract with name ', contractName)
             }
 
-            contractInstance = new web3.eth.Contract(selectedContractABI, contractAddress,
+            contractInstance = new this.state.web3.eth.Contract(selectedContractABI, contractAddress,
                 {
-                    from: userAddress, // default from address
+                    from: this.state.userAddress, // default from address
                     gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
                 })
         }
@@ -220,7 +218,7 @@ export default class BlockChainCC extends React.Component {
          * money
          * **/
         contractInstance.methods.destroy().send({
-            from: userAddress,
+            from: this.state.userAddress,
             gas: 300000,//TODO GAS LIMIT, to estimate!
             gasPrice: 200000000000,
         }).
