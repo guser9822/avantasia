@@ -11,10 +11,21 @@
     transform: translate(-50%, -50%);
 }
 
-.ModalContent{
-
+.Modal-Body{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 85%;
 }
 
-.ModalContent-Footer{
-
+.Modal-Footer{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    height: 15%;
+    border-top: 1px solid black;
+    background-color: lightgrey;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
 }

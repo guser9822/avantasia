@@ -5,13 +5,13 @@ function Modal(WrappedComponent) {
         render() {
             return (
                 <div className="ModalSpace">
-                    <div className="ModalContent">
+                    <div className="Modal-Body">
                         <WrappedComponent />
-                        <div className="ModalContent-Footer">
-                            <button onClick={void(0)} disabled={void(0)}>Ok</button>
-                            <button onClick={void(0)} disabled={void(0)}>Cancel</button>
-                        </div>
                     </div>
+                    <div className="Modal-Footer">
+                            <button onClick={void(0)} disabled={void(0)}>CANCEL</button>
+                            <button onClick={void(0)} disabled={void(0)}>OK</button>
+                        </div>
                 </div>
             )
         }
