@@ -50,9 +50,9 @@ export default class BlockChainCC extends React.Component {
         if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
             this.setState({
                 selectedContractComponent: <Faucet userAddress={this.state.userAddress}
-                                            contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
-                                            json={FaucetJSON}
-                                            web3={this.state.web3}></Faucet>,
+                    contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+                    json={FaucetJSON}
+                    web3={this.state.web3}></Faucet>,
                 selecteContractJSON: FaucetJSON,
                 selectedContractName: FAUCET_CONTRACT_NAME,
                 selectedContractABI: FaucetJSON.abi,
@@ -115,24 +115,13 @@ export default class BlockChainCC extends React.Component {
     }
 
     loadContractClickHandle = () => {
-        let selectedContractName = undefined
-        const contractAddressInput = this.state.contractAddress
-        const contrName = this.state.contractName
 
-        if (contractAddressInput &&
-            contractAddressInput.length &&
-            contrName &&
-            contrName.length) {
-
-            window.localStorage.setItem(selectedContractName, contractAddressInput)
-            console.log('Using contract address ' + contractAddressInput + ' for contract name ' + contrName)
+        if (!this.switchContract(this.state.contractName)) {
             return
         }
 
-        if (!this.switchContract(contrName)) {
-            return
-        }
-
+        window.localStorage.setItem(this.state.selectedContractName, this.state.selectedContractAddress)
+        console.log('Using contract address ' + this.state.contractAddress + ' for contract name ' + this.state.contractName)
     }
 
     disableOperationButton = () => {
