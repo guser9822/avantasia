@@ -20,13 +20,14 @@ export default class BlockChainCC extends React.Component {
             contractName: "",
             contractAddress: "",
             userAddress: window.sessionStorage.getItem('userAddress'),
-            selectedContractComponent: void undefined,
-            selecteContractJSON: undefined,
+            selectedContractComponent: undefined,
+            selectedContractJSON: undefined,
             selectedContractName: undefined,
             selectedContractABI: undefined,
             selectedContractBytecode: undefined,
             selectedContractAddress: "",
             showDestroyModal: false,
+            contractLoaded: false,
         }
     }
 
@@ -40,33 +41,50 @@ export default class BlockChainCC extends React.Component {
         window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
-    switchContract = (contractName) => {
+    switchContract = (_contractName) => {
 
-        if (!contractName || !contractName.length) {
+        if (!_contractName || !_contractName.length) {
             console.error('Invalid contract name given in input.')
             return
         }
-        let ok = false
-        if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            this.setState({
-                selectedContractComponent: <Faucet userAddress={this.state.userAddress}
-                    contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
-                    json={FaucetJSON}
-                    web3={this.state.web3}></Faucet>,
-                selecteContractJSON: FaucetJSON,
-                selectedContractName: FAUCET_CONTRACT_NAME,
-                selectedContractABI: FaucetJSON.abi,
-                selectedContractBytecode: FaucetJSON.bytecode,
-                selectedContractAddress: window.localStorage.getItem(FAUCET_CONTRACT_NAME),
-                contractAddress: window.localStorage.getItem(FAUCET_CONTRACT_NAME),
-            })
+
+        let ok = false;
+        let component = undefined;
+        let contractJSON = undefined;
+        let contractName = undefined;
+        let contractABI = undefined;
+        let contractBytecode = undefined;
+        let selContractAddress = undefined;
+        let contractAddress = undefined;
+
+        if (_contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
+
+            component = <Faucet userAddress={this.state.userAddress}
+                contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+                json={FaucetJSON}
+                web3={this.state.web3}></Faucet>;
+            contractJSON = FaucetJSON;
+            contractName = FAUCET_CONTRACT_NAME;
+            contractABI = FaucetJSON.abi;
+            contractBytecode = FaucetJSON.bytecode;
+            selContractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME);
+            contractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME);
             ok = true;
         }
 
         if (!ok) {
-            console.error('No contract found with name ', contractName)
+            console.error('No contract found with name ', _contractName)
         }
 
+        this.setState({
+            selectedContractComponent: component,
+            selectedContractJSON: contractJSON,
+            selectedContractName: contractName,
+            selectedContractABI: contractABI,
+            selectedContractBytecode: contractBytecode,
+            selectedContractAddress: selContractAddress,
+            contractAddress: contractAddress,
+        })
         return ok
     }
 
@@ -122,6 +140,9 @@ export default class BlockChainCC extends React.Component {
 
         window.localStorage.setItem(this.state.selectedContractName, this.state.selectedContractAddress)
         console.log('Using contract address ' + this.state.contractAddress + ' for contract name ' + this.state.contractName)
+        this.setState({
+            contractLoaded: true
+        })
     }
 
     disableOperationButton = () => {
@@ -132,53 +153,29 @@ export default class BlockChainCC extends React.Component {
         return this.state.authorized
     }
 
+    isContractLoaded = () => {
+        return this.state.contractLoaded
+    }
+
     estimationClickHandle = () => {
-        const contrName = this.state.contractName
-        const contrAdress = this.state.contractAddress
-        const userAddr = this.state.userAddress
-        const web3 = this.state.web3
-        if (!contrAdress) {
-            console.log('Error, no contract address found ')
+
+        if (!this.state.contractLoaded) {
             return
         }
 
-        let selectedContractABI = undefined
-        let selectedContractBytecode = undefined
-        if (contrName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedContractABI = FaucetJSON.abi
-            selectedContractBytecode = '0x' + FaucetJSON.bytecode
-        }
-
-        if (!selectedContractABI) {
-            console.log('Error, no contract ABI found for contract named ', contrName)
-            return
-        }
-        const newContract = new web3.eth.Contract(selectedContractABI, contrAdress,
+        const newContract = new this.state.web3.eth.Contract(this.state.selectedContractABI, this.state.selectedContractAddress,
             {
-                from: userAddr, // default from address
+                from: this.state.userAddress, // default from address
                 gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
             });
-
+        const byteCode = '0x' + this.state.selectedContractBytecode
         newContract.
-            deploy({ data: selectedContractBytecode }).
+            deploy({ data: byteCode }).
             estimateGas().then(gas => {
                 console.log('GAS : ', gas)
             }).catch(err => {
                 console.log('ERROR ', err)
             })
-        //console.log('Contract data ', newContract)
-        //1*10^4 = 10000000000000000 -> 0.0001 ether
-        /*         newContract.methods.withdraw(100). //TODO Error if withdraw > 0 , faucet is empty, refill 
-                    estimateGas({
-                        from: userAddr,
-                        gas: 5000000,
-                    }).
-                    then(gas => {
-                        console.log('GAS : ', gas)
-                    }).catch(err => {
-                        console.log('ERROR ', err)
-                    }) */
-
     }
 
     destroyClickHandle = () => {
@@ -250,16 +247,26 @@ export default class BlockChainCC extends React.Component {
                     <div className="ContractInfo-Block">
                         <label className="Descrpt-Label"> Contract info : Input name or address of the contract to operate on it</label>
                         <label>Name : </label>
-                        <input disabled={!this.state.authorized} type="text" value={this.state.contractName} onChange={this.changeContractNameHandle} />
+                        <input disabled={!this.state.authorized}
+                            type="text"
+                            value={this.state.contractName}
+                            onChange={this.changeContractNameHandle} />
                         <label>Address : </label>
-                        <input disabled={!this.state.authorized} type="text" value={this.state.contractAddress} onChange={this.changeContractAddressHandle} />
+                        <input disabled={!this.state.authorized}
+                            type="text"
+                            value={this.state.contractAddress}
+                            onChange={this.changeContractAddressHandle} />
                     </div>
                     <br />
                     <div className="ContractOperation-Block">
-                        <button onClick={this.estimationClickHandle} disabled={this.disableOperationButton()}>Estimate creation</button>
-                        <button onClick={this.deployContractClickHandle} disabled={this.disableOperationButton()}>Create the contract</button>
-                        <button onClick={this.loadContractClickHandle} disabled={this.disableOperationButton()}>Load latest version</button>
-                        <button onClick={this.destroyClickHandle} disabled={!this.isAuthorized}>Destroy a contract</button>
+                        <button onClick={this.estimationClickHandle}
+                            disabled={this.disableOperationButton() || !this.isContractLoaded()}>Estimate creation</button>
+                        <button onClick={this.deployContractClickHandle}
+                            disabled={this.disableOperationButton()}>Create the contract</button>
+                        <button onClick={this.loadContractClickHandle}
+                            disabled={this.disableOperationButton()}>Load latest version</button>
+                        <button onClick={this.destroyClickHandle}
+                            disabled={!this.isAuthorized}>Destroy a contract</button>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
