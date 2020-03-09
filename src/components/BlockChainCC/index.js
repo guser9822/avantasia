@@ -27,7 +27,6 @@ export default class BlockChainCC extends React.Component {
             selectedContractBytecode: undefined,
             selectedContractAddress: "",
             showDestroyModal: false,
-            contractLoaded: false,
         }
     }
 
@@ -41,10 +40,128 @@ export default class BlockChainCC extends React.Component {
         window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
-    switchContract = (_contractName) => {
+    deployContractClickHandle = () => {
+        const web3 = this.state.web3
+        web3.eth.getAccounts().then(accounts => {
+            return accounts[0]
+        }).then(userAccount => {
+
+            const loadedContract = this.getContractProps(this.state.contractName)
+            if (!loadedContract) {
+                return
+            }
+
+            this.deployContract(loadedContract.selectedContractName, userAccount, loadedContract.selectedContractBytecode)
+        }).catch((err) => console.log(err))
+    }
+
+    deployContract = (selectedContractName, userAccount, contactByteCode) => {
+
+        this.state.web3.
+            eth.
+            sendTransaction({
+                from: userAccount,
+                to: 0,
+                data: contactByteCode,
+                gas: 300000,//GAS LIMIT, to estimate!
+                gasPrice: 200000000000,
+            }).then(data => {
+                window.localStorage.setItem(selectedContractName, data.contractAddress)
+            }).catch(err => {
+                console.log(`ERROR : `,err)
+            })
+    }
+
+    loadContractClickHandle = () => {
+
+        const contractProps = this.getContractProps(this.state.contractName)
+        if (!contractProps) {
+            return
+        }
+
+        window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress)
+        console.log(`Using contract address ${contractProps.contractAddress} for contract named  ${contractProps.selectedContractName}`)
+        this.setState({
+            ...contractProps
+        })
+    }
+
+    estimateCreationClickHandle = () => {
+
+        const contractProps = this.getContractProps(this.state.contractName)
+        if (!contractProps) {
+            console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
+            return
+        }
+
+        const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
+            {
+                from: this.state.userAddress, // default from address
+                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
+            });
+        const byteCode = '0x' + contractProps.selectedContractBytecode
+        newContract.
+            deploy({ data: byteCode }).
+            estimateGas().then(gas => {
+                console.log(`GAS : ${gas}`)
+            }).catch(err => {
+                console.log(`ERROR : `,err)
+            })
+    }
+
+    destroyConfirmClickHandle = (params) => {
+        this.setState({ showDestroyModal: false })
+        const contractName = params[0]
+        const contractAddress = params[1]
+
+        let contractInstance = undefined
+        const contractProps = this.getContractProps(contractName)
+        
+        if (!contractProps) {
+            console.error(`Cannot estimate creation for the contract named ${contractName}`)
+            return
+        }
+        
+        if(contractProps.selectedContractAddress !== contractAddress){
+            console.error(`Cannot destroy the contract at the address ${contractAddress} named ${contractName} which is already bound to the contract at ${contractProps.selectedContractAddress}`)
+            return
+        }
+
+        contractInstance = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractAddress,
+            {
+                from: this.state.userAddress, // default from address
+                gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
+            })
+
+
+        if (!contractInstance) {
+            console.log(`Error while creating the instance for the contract ${contractName} at address ${contractAddress}`)
+            return
+        }
+
+        /**
+         * Use send for deleting a contract, it will generate a transaction
+         * (it will modofy the contract state) and the owner will get back his
+         * money
+         * **/
+        contractInstance.methods.destroy().send({
+            from: this.state.userAddress,
+            gas: 300000,//TODO GAS LIMIT, to estimate!
+            gasPrice: 200000000000,
+        }).
+            then((res) => {
+                console.log(`Contract  ${contractName} at  ${contractAddress} destroyed : `,res)
+            }).
+            catch((err) => {
+                console.log(`Error destroiyng  ${contractName} at  ${contractAddress} : `,err)
+            })
+
+    }
+
+    getContractProps = (_contractName) => {
 
         if (!_contractName || !_contractName.length) {
-            console.error('Invalid contract name given in input.')
+            console.error(`Invalid contract name given in input.`)
             return
         }
 
@@ -73,10 +190,11 @@ export default class BlockChainCC extends React.Component {
         }
 
         if (!ok) {
-            console.error('No contract found with name ', _contractName)
+            console.error(`No contract found with name  ${_contractName}`)
+            return
         }
 
-        this.setState({
+        return {
             selectedContractComponent: component,
             selectedContractJSON: contractJSON,
             selectedContractName: contractName,
@@ -84,40 +202,7 @@ export default class BlockChainCC extends React.Component {
             selectedContractBytecode: contractBytecode,
             selectedContractAddress: selContractAddress,
             contractAddress: contractAddress,
-        })
-        return ok
-    }
-
-    deployContractClickHandle = () => {
-        const web3 = this.state.web3
-        web3.eth.getAccounts().then(accounts => {
-            return accounts[0]
-        }).then(userAccount => {
-
-            if (!this.switchContract(this.state.contractName)) {
-                return
-            }
-
-            this.deployContract(this.state.selectedContractName, userAccount, this.state.selectedContractBytecode)
-        }).catch((err) => console.log(err))
-    }
-
-    deployContract = (selectedContractName, userAccount, contactByteCode) => {
-
-        const web3 = this.state.web3
-        web3.
-            eth.
-            sendTransaction({
-                from: userAccount,
-                to: 0,
-                data: contactByteCode,
-                gas: 300000,//GAS LIMIT, to estimate!
-                gasPrice: 200000000000,
-            }).then(data => {
-                window.localStorage.setItem(selectedContractName, data.contractAddress)
-            }).catch(err => {
-                console.error('Error ', err)
-            })
+        }
     }
 
     changeContractNameHandle = (event) => {
@@ -129,19 +214,6 @@ export default class BlockChainCC extends React.Component {
     changeContractAddressHandle = (event) => {
         this.setState({
             contractAddress: event.target.value
-        })
-    }
-
-    loadContractClickHandle = () => {
-
-        if (!this.switchContract(this.state.contractName)) {
-            return
-        }
-
-        window.localStorage.setItem(this.state.selectedContractName, this.state.selectedContractAddress)
-        console.log('Using contract address ' + this.state.contractAddress + ' for contract name ' + this.state.contractName)
-        this.setState({
-            contractLoaded: true
         })
     }
 
@@ -157,27 +229,6 @@ export default class BlockChainCC extends React.Component {
         return this.state.contractLoaded
     }
 
-    estimationClickHandle = () => {
-
-        if (!this.state.contractLoaded) {
-            return
-        }
-
-        const newContract = new this.state.web3.eth.Contract(this.state.selectedContractABI, this.state.selectedContractAddress,
-            {
-                from: this.state.userAddress, // default from address
-                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-            });
-        const byteCode = '0x' + this.state.selectedContractBytecode
-        newContract.
-            deploy({ data: byteCode }).
-            estimateGas().then(gas => {
-                console.log('GAS : ', gas)
-            }).catch(err => {
-                console.log('ERROR ', err)
-            })
-    }
-
     destroyClickHandle = () => {
         const showDestroyState = !this.state.showDestroyModal
         this.setState({ showDestroyModal: showDestroyState })
@@ -187,50 +238,6 @@ export default class BlockChainCC extends React.Component {
         this.setState({ showDestroyModal: false })
     }
 
-    destroyConfirmClickHandle = (params) => {
-        this.setState({ showDestroyModal: false })
-        const contractName = params[0]
-        const contractAddress = params[1]
-
-        let selectedContractABI = undefined
-        let contractInstance = undefined
-        if (contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
-            selectedContractABI = FaucetJSON.abi
-
-            if (!selectedContractABI) {
-                console.log('Error, no abi found for contract with name ', contractName)
-            }
-
-            contractInstance = new this.state.web3.eth.Contract(selectedContractABI, contractAddress,
-                {
-                    from: this.state.userAddress, // default from address
-                    gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
-                })
-        }
-
-        if (!contractInstance) {
-            console.log('Error, no instance created for contract ', contractName)
-        }
-
-        /**
-         * Use send for deleting a contract, it will generate a transaction
-         * (it will modofy the contract state) and the owner will get back his
-         * money
-         * **/
-        contractInstance.methods.destroy().send({
-            from: this.state.userAddress,
-            gas: 300000,//TODO GAS LIMIT, to estimate!
-            gasPrice: 200000000000,
-        }).
-            then((res) => {
-                console.log('Contract ' + contractName + ' at ' + contractAddress + ' destroyed!')
-                console.log('Resp ', res)
-            }).
-            catch((err) => {
-                console.log('Error destroiyng ' + contractName + ' at ' + contractAddress + ': ' + err)
-            })
-
-    }
 
     render() {
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
@@ -257,14 +264,14 @@ export default class BlockChainCC extends React.Component {
                     </div>
                     <br />
                     <div className="ContractOperation-Block">
-                        <button onClick={this.estimationClickHandle}
-                            disabled={this.disableOperationButton() || !this.isContractLoaded()}>Estimate creation</button>
+                        <button onClick={this.estimateCreationClickHandle}
+                            disabled={this.disableOperationButton()}>Estimate creation</button>
                         <button onClick={this.deployContractClickHandle}
                             disabled={this.disableOperationButton()}>Create the contract</button>
                         <button onClick={this.loadContractClickHandle}
                             disabled={this.disableOperationButton()}>Load latest version</button>
                         <button onClick={this.destroyClickHandle}
-                            disabled={!this.isAuthorized}>Destroy a contract</button>
+                            disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}

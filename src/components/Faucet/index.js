@@ -51,9 +51,9 @@ export default class Faucet extends React.Component {
                     gasPrice: 200000000000,
                     value: wei,
                 }).then(res => {
-                    console.log('DEPOSIT SUCCESS : ', res)
+                    console.log(`DEPOSIT SUCCESS :  `,res)
                 }).catch(err => {
-                    console.log('DEPOSIT ERROR: ', err)
+                    console.log(`DEPOSIT ERROR:  `,err)
                 })
                 break;
             case BALANCE:
@@ -81,14 +81,14 @@ export default class Faucet extends React.Component {
             gas: 300000,//TODO GAS LIMIT, to estimate!
             gasPrice: 200000000000,
         }).then(res => {
-            console.log('Faucet balance : ', res)
+            console.log(`Faucet balance :  ${res}`)
             const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME) +' ETH'
             this.setState({
                 faucetBalance: balanceInEther,
             })
             return res
         }).catch(ret => {
-            console.log('Faucet balance : ', ret)
+            console.log(`Faucet balance :  ${ret}`)
             return 'error..'
         })
         return 'gathering...'
