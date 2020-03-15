@@ -4,7 +4,7 @@ import Web3Connector from '../Web3Connector/index'
 import Modal from '../Modal/index'
 import Web3 from 'web3'
 import DestroyModal from '../DestroyModal/index'
-
+import ContractOperations from '../bl/blockchain-bl'
 import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
 import Faucet from '../Faucet'
 const FAUCET_CONTRACT_NAME = "faucet"
@@ -51,7 +51,26 @@ export default class BlockChainCC extends React.Component {
                 return
             }
 
-            this.deployContract(loadedContract.selectedContractName, userAccount, loadedContract.selectedContractBytecode)
+            const contractInstance = new web3.eth.Contract(loadedContract.selectedContractABI, loadedContract.contractAddress,
+                {
+                    from: this.state.userAddress, // default from address
+                    gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
+                })
+            const contractByecode = '0x' + loadedContract.selectedContractBytecode
+
+            ContractOperations.estimateGasCreation(contractInstance, contractByecode).
+                then(gasEstimation => {
+
+                    ContractOperations.deployContract(web3, userAccount, contractByecode, gasEstimation, '20000000000').
+                        then(data => {
+
+                            console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.contractAddress} with a gas estimation price ${gasEstimation}`)
+                            window.localStorage.setItem(loadedContract.selectedContractName, data.contractAddress)
+                        
+                        }).catch(err => console.error('Error during contract creation and deploy : ', err))
+
+                }).catch(err => console.error('Error during contract gas estimation : ', err))
+
         }).catch((err) => console.log(err))
     }
 
@@ -68,7 +87,7 @@ export default class BlockChainCC extends React.Component {
             }).then(data => {
                 window.localStorage.setItem(selectedContractName, data.contractAddress)
             }).catch(err => {
-                console.log(`ERROR : `,err)
+                console.log(`ERROR : `, err)
             })
     }
 
@@ -105,7 +124,7 @@ export default class BlockChainCC extends React.Component {
             estimateGas().then(gas => {
                 console.log(`GAS : ${gas}`)
             }).catch(err => {
-                console.log(`ERROR : `,err)
+                console.log(`ERROR : `, err)
             })
     }
 
@@ -116,13 +135,13 @@ export default class BlockChainCC extends React.Component {
 
         let contractInstance = undefined
         const contractProps = this.getContractProps(contractName)
-        
+
         if (!contractProps) {
             console.error(`Cannot estimate creation for the contract named ${contractName}`)
             return
         }
-        
-        if(contractProps.selectedContractAddress !== contractAddress){
+
+        if (contractProps.selectedContractAddress !== contractAddress) {
             console.error(`Cannot destroy the contract at the address ${contractAddress} named ${contractName} which is already bound to the contract at ${contractProps.selectedContractAddress}`)
             return
         }
@@ -150,10 +169,10 @@ export default class BlockChainCC extends React.Component {
             gasPrice: 200000000000,
         }).
             then((res) => {
-                console.log(`Contract  ${contractName} at  ${contractAddress} destroyed : `,res)
+                console.log(`Contract  ${contractName} at  ${contractAddress} destroyed : `, res)
             }).
             catch((err) => {
-                console.log(`Error destroiyng  ${contractName} at  ${contractAddress} : `,err)
+                console.log(`Error destroiyng  ${contractName} at  ${contractAddress} : `, err)
             })
 
     }
