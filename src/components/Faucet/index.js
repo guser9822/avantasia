@@ -70,6 +70,11 @@ export default class Faucet extends React.Component {
             }).then(gesEst => {
 
                 console.log(`Withdraw funds gas estimation ${gesEst}`)
+                /**
+                 * Withdraw function modify the contract's state, so 
+                 * send is nededed; a new transacation will be generated
+                 * on the blockchain
+                */
                 contract.methods.withdraw(wei).send({
                     from: userAddress,
                     gas: gesEst,
