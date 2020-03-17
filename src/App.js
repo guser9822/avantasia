@@ -1,10 +1,10 @@
 import React from 'react';
 import './App.css';
-import BlockChainCC from './components/BlockChainCC/index'
+import Dashboard from './components/Dashboard/index'
 function App() {
   return (
     <div className="App">
-        <BlockChainCC></BlockChainCC>
+        <Dashboard></Dashboard>
     </div>
   );
 }

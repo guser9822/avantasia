@@ -1,4 +1,4 @@
-import './BlockChainCC.css'
+import './Dashboard.css'
 import React from 'react';
 import Web3Connector from '../Web3Connector/index'
 import Modal from '../Modal/index'
@@ -10,7 +10,7 @@ import Faucet from '../Faucet'
 const FAUCET_CONTRACT_NAME = "faucet"
 
 const DestroyContractModal = Modal(DestroyModal)
-export default class BlockChainCC extends React.Component {
+export default class Dashboard extends React.Component {
 
     constructor(props) {
         super(props);
