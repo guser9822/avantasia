@@ -4,6 +4,8 @@ const WITHDRAW = 'withdraw';
 const DEPOSIT = 'deposit';
 const BALANCE = 'balance';
 const EHTER_UNIT_NAME = 'ether';
+const DEFAULT_GAS_LIMIT = 5000000
+
 export default class Faucet extends React.Component {
 
     constructor(props) {
@@ -43,18 +45,7 @@ export default class Faucet extends React.Component {
 
                 break;
             case DEPOSIT:
-                const wei = web3.utils.toWei(String(amount), EHTER_UNIT_NAME)
-                web3.eth.sendTransaction({
-                    from: userAddress,
-                    to: contractAddress,
-                    gas: 300000,//TODO GAS LIMIT, to estimate!
-                    gasPrice: 200000000000,
-                    value: wei,
-                }).then(res => {
-                    console.log(`DEPOSIT SUCCESS :  `,res)
-                }).catch(err => {
-                    console.log(`DEPOSIT ERROR:  `,err)
-                })
+                this.depositFunds(contractAddress, web3, userAddress, amount)
                 break;
             case BALANCE:
                 const val = this.getFaucetBalance()
@@ -82,7 +73,7 @@ export default class Faucet extends React.Component {
             gasPrice: 200000000000,
         }).then(res => {
             console.log(`Faucet balance :  ${res}`)
-            const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME) +' ETH'
+            const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH'
             this.setState({
                 faucetBalance: balanceInEther,
             })
@@ -92,6 +83,38 @@ export default class Faucet extends React.Component {
             return 'error..'
         })
         return 'gathering...'
+    }
+
+    depositFunds = (contractAddress, web3, userAddress, amount) => {
+
+        if (amount <= 0) {
+            console.error(`Aborting funds deposit, amount is invalid ${amount}`)
+            return
+        }
+
+        const wei = web3.utils.toWei(String(amount), EHTER_UNIT_NAME)
+
+        web3.eth.estimateGas({
+            from: userAddress,
+            to: contractAddress,
+            value: wei,
+        }).then(gesEst => {
+            
+            console.log(`Send transaction gas estimation ${gesEst}`)
+            web3.eth.sendTransaction({
+                from: userAddress,
+                to: contractAddress,
+                gas: gesEst,
+                gasPrice: 200000000000,
+                value: wei,
+            }).then(res => {
+                console.log(`DEPOSIT SUCCESS :  `, res)
+            }).catch(err => {
+                console.log(`DEPOSIT ERROR:  `, err)
+            })
+
+        }).catch(err => console.error(`Send transaction gas estimation error: `, err))
+
     }
 
     render() {
