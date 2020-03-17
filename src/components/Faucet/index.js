@@ -38,17 +38,18 @@ export default class Faucet extends React.Component {
         const web3 = this.state.web3
         const userAddress = this.state.userAddress
         const amount = this.state.amount
+        const contract = this.state.faucetContract
 
         switch (selection) {
 
             case WITHDRAW:
-
+                this.withdrawFunds(web3, contract, amount)
                 break;
             case DEPOSIT:
                 this.depositFunds(contractAddress, web3, userAddress, amount)
                 break;
             case BALANCE:
-                const val = this.getFaucetBalance()
+                const val = this.getFaucetBalance(web3, contract, userAddress)
                 this.setState({
                     faucetBalance: val,
                 })
@@ -56,10 +57,35 @@ export default class Faucet extends React.Component {
         }
     }
 
-    getFaucetBalance = () => {
-        const contract = this.state.faucetContract
-        const web3 = this.state.web3
-        const userAddress = this.state.userAddress
+    withdrawFunds = (web3, contract, amount, userAddress) => {
+        if (amount <= 0) {
+            console.error(`Aborting funds deposit, amount is invalid ${amount}`)
+            return
+        }
+
+        const wei = web3.utils.toWei(String(amount), EHTER_UNIT_NAME)
+        contract.methods.withdraw(wei).
+            estimateGas({
+                from: userAddress,
+            }).then(gesEst => {
+
+                console.log(`Withdraw funds gas estimation ${gesEst}`)
+                contract.methods.withdraw(wei).send({
+                    from: userAddress,
+                    gas: gesEst,
+                    gasPrice: 200000000000,
+                }).then(res => console.log(`Amount withdrawen from faucet ${wei}`, res))
+                .catch(err => console.error(`Error while withdrawing ether `, err))
+
+            })
+            .catch(err => {
+                console.log(`Withdraw funds error `, err)
+            })
+
+    }
+
+    getFaucetBalance = (web3, contract, userAddress) => {
+
         if (!contract || !userAddress) {
             return 'error..'
         }
@@ -99,7 +125,7 @@ export default class Faucet extends React.Component {
             to: contractAddress,
             value: wei,
         }).then(gesEst => {
-            
+
             console.log(`Send transaction gas estimation ${gesEst}`)
             web3.eth.sendTransaction({
                 from: userAddress,
