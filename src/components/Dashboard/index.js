@@ -17,16 +17,22 @@ export default class Dashboard extends React.Component {
         this.state = {
             authorized: window.sessionStorage.getItem('authorized') ? true : false,
             web3: window.sessionStorage.getItem('authorized') ? new Web3(Web3.givenProvider) : undefined,
+            userAddress: window.sessionStorage.getItem('userAddress'),
+            showDestroyModal: false,
+            ...this.initState()
+        }
+    }
+
+    initState = () =>{
+        return {
             contractName: "",
             contractAddress: "",
-            userAddress: window.sessionStorage.getItem('userAddress'),
             selectedContractComponent: undefined,
             selectedContractJSON: undefined,
             selectedContractName: undefined,
             selectedContractABI: undefined,
             selectedContractBytecode: undefined,
             selectedContractAddress: "",
-            showDestroyModal: false,
         }
     }
 
@@ -257,6 +263,11 @@ export default class Dashboard extends React.Component {
         this.setState({ showDestroyModal: false })
     }
 
+    clearClickHandle = () =>{
+        this.setState({
+            ...this.initState()
+        })
+    }
 
     render() {
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
@@ -291,6 +302,8 @@ export default class Dashboard extends React.Component {
                             disabled={this.disableOperationButton()}>Load latest version</button>
                         <button onClick={this.destroyClickHandle}
                             disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
+                        <button onClick={this.clearClickHandle}
+                            disabled={!this.isAuthorized}>Clear</button>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
