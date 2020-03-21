@@ -23,7 +23,7 @@ export default class Dashboard extends React.Component {
         }
     }
 
-    initState = () =>{
+    initState = () => {
         return {
             contractName: "",
             contractAddress: "",
@@ -72,7 +72,7 @@ export default class Dashboard extends React.Component {
 
                             console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.contractAddress} with a gas estimation price ${gasEstimation}`)
                             window.localStorage.setItem(loadedContract.selectedContractName, data.contractAddress)
-                        
+
                         }).catch(err => console.error('Error during contract creation and deploy : ', err))
 
                 }).catch(err => console.error('Error during contract gas estimation : ', err))
@@ -263,7 +263,7 @@ export default class Dashboard extends React.Component {
         this.setState({ showDestroyModal: false })
     }
 
-    clearClickHandle = () =>{
+    clearClickHandle = () => {
         this.setState({
             ...this.initState()
         })
@@ -291,19 +291,18 @@ export default class Dashboard extends React.Component {
                             type="text"
                             value={this.state.contractAddress}
                             onChange={this.changeContractAddressHandle} />
-                    </div>
-                    <br />
-                    <div className="ContractOperation-Block">
-                        <button onClick={this.estimateCreationClickHandle}
-                            disabled={this.disableOperationButton()}>Estimate creation</button>
-                        <button onClick={this.deployContractClickHandle}
-                            disabled={this.disableOperationButton()}>Create the contract</button>
-                        <button onClick={this.loadContractClickHandle}
-                            disabled={this.disableOperationButton()}>Load latest version</button>
-                        <button onClick={this.destroyClickHandle}
-                            disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
-                        <button onClick={this.clearClickHandle}
-                            disabled={!this.isAuthorized}>Clear</button>
+                        <div className="ContractOperation-Block">
+                            <button onClick={this.estimateCreationClickHandle}
+                                disabled={this.disableOperationButton()}>Estimate creation</button>
+                            <button onClick={this.deployContractClickHandle}
+                                disabled={this.disableOperationButton()}>Create the contract</button>
+                            <button onClick={this.loadContractClickHandle}
+                                disabled={this.disableOperationButton()}>Load latest version</button>
+                            <button onClick={this.destroyClickHandle}
+                                disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
+                            <button onClick={this.clearClickHandle}
+                                disabled={!this.isAuthorized}>Clear</button>
+                        </div>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
