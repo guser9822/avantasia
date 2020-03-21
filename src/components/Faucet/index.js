@@ -80,7 +80,7 @@ export default class Faucet extends React.Component {
                     gas: gesEst,
                     gasPrice: 200000000000,
                 }).then(res => console.log(`Amount withdrawen from faucet ${wei}`, res))
-                .catch(err => console.error(`Error while withdrawing ether `, err))
+                    .catch(err => console.error(`Error while withdrawing ether `, err))
 
             })
             .catch(err => {
@@ -104,13 +104,13 @@ export default class Faucet extends React.Component {
             gasPrice: 200000000000,
         }).then(res => {
             console.log(`Faucet balance :  ${res}`)
-            const balanceInEther = web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH'
+            const balanceInEther = '( ' +web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH )'
             this.setState({
                 faucetBalance: balanceInEther,
             })
             return res
         }).catch(ret => {
-            console.log(`Faucet balance :  ${ret}`)
+            console.log(`Faucet balance : `,ret)
             return 'error..'
         })
         return 'gathering...'
@@ -152,13 +152,14 @@ export default class Faucet extends React.Component {
         return (
             <article>
                 <div className="Faucet">
-                    <h3>Faucet Component</h3>
-                    <p>Faucet balance : {this.state.faucetBalance} </p>
+                    <h3>Faucet Component {this.state.faucetBalance}</h3>
                     <label>Amount: </label>
                     <input type="number" value={this.state.amount} onChange={this.onChangeAmount} min="0"></input>
-                    <button onClick={() => this.onOperationClick(BALANCE)}>Balance</button>
-                    <button onClick={() => this.onOperationClick(WITHDRAW)}>Withdraw</button>
-                    <button onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
+                    <div className="Faucet-Operations">
+                        <button onClick={() => this.onOperationClick(BALANCE)}>Balance</button>
+                        <button onClick={() => this.onOperationClick(WITHDRAW)}>Withdraw</button>
+                        <button onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
+                    </div>
                 </div>
             </article>
         );
