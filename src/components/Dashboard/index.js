@@ -280,7 +280,7 @@ export default class Dashboard extends React.Component {
                     </div>
                     <Web3Connector authorization={this.authorizationHandle} />
                     <div className="ContractInfo-Block">
-                        <label className="Descrpt-Label"> Contract info : Input name or address of the contract to operate on it</label>
+                        <label className="Descrpt-Label">Write the name of the contract to operate on it</label>
                         <label>Name : </label>
                         <input disabled={!this.state.authorized}
                             type="text"
