@@ -1,22 +1,12 @@
-pragma solidity ^0.6.4;
+pragma solidity ^0.6.0;
+
+import "../../../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
 // Our first contract is a faucet!
-contract Faucet {
+contract Faucet is Ownable {
 
     event Withdrawal(address indexed to, uint amount);
 	event Deposit(address indexed from, uint amount);
-
-	address owner;
-
-    modifier onlyOwner {
-        require(msg.sender == owner, "Only the contract owner can destroy it.");
-        _;
-    }
-
-	// Initialize Faucet contract: set owner
-	constructor() public {
-		owner = msg.sender;
-	}
 
     // Give out ether to anyone who asks
     function withdraw(uint withdraw_amount) public {
@@ -34,10 +24,9 @@ contract Faucet {
     }
     
     //Get faucet balance
-    function getBalance() view public returns (uint balance) {
+    function getBalance() public view returns (uint balance) {
         return address(this).balance;
     }
-
 
     // Invoked when no function match. If non- payable transaction will revert
     fallback() external {}
@@ -49,7 +38,7 @@ contract Faucet {
 
     // Contract destructor
     function destroy() public onlyOwner {
-        selfdestruct(payable(owner));
+        selfdestruct(payable(owner()));
     }
 
 }
