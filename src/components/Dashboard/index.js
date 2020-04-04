@@ -6,9 +6,11 @@ import Web3 from 'web3'
 import DestroyModal from '../DestroyModal/index'
 import ContractOperations from '../bl/blockchain-bl'
 import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
+import RDTokenJSON from '../../bin/src/solc-src/RDToken/RDToken.json'
 import Faucet from '../Faucet'
 const FAUCET_CONTRACT_NAME = "faucet"
-
+const RDTOKEN_CONTRACT_NAME = "RDToken"
+const TO_CREATE_PLACEHOLDER = "< to create >"
 const DestroyContractModal = Modal(DestroyModal)
 export default class Dashboard extends React.Component {
 
@@ -104,8 +106,12 @@ export default class Dashboard extends React.Component {
             return
         }
 
-        window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress)
-        console.log(`Using contract address ${contractProps.contractAddress} for contract named  ${contractProps.selectedContractName}`)
+        const { selectedContractAddress } = contractProps
+        if(selectedContractAddress){
+            window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress)
+            console.log(`Using contract address ${contractProps.contractAddress} for contract named  ${contractProps.selectedContractName}`)
+        }
+
         this.setState({
             ...contractProps
         })
@@ -118,7 +124,7 @@ export default class Dashboard extends React.Component {
             console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
             return
         }
-
+        
         const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
             {
                 from: this.state.userAddress, // default from address
@@ -199,19 +205,37 @@ export default class Dashboard extends React.Component {
         let selContractAddress = undefined;
         let contractAddress = undefined;
 
-        if (_contractName.toUpperCase().includes(FAUCET_CONTRACT_NAME.toUpperCase())) {
 
-            component = <Faucet userAddress={this.state.userAddress}
-                contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
-                json={FaucetJSON}
-                web3={this.state.web3}></Faucet>;
-            contractJSON = FaucetJSON;
-            contractName = FAUCET_CONTRACT_NAME;
-            contractABI = FaucetJSON.abi;
-            contractBytecode = FaucetJSON.bytecode;
-            selContractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME);
-            contractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME);
-            ok = true;
+        const genContractName = _contractName.toUpperCase()
+        switch (genContractName) {
+
+            case FAUCET_CONTRACT_NAME.toUpperCase():
+
+                component = <Faucet userAddress={this.state.userAddress}
+                    contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+                    json={FaucetJSON}
+                    web3={this.state.web3}></Faucet>;
+                contractJSON = FaucetJSON;
+                contractName = FAUCET_CONTRACT_NAME;
+                contractABI = FaucetJSON.abi;
+                contractBytecode = FaucetJSON.bytecode;
+                selContractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(FAUCET_CONTRACT_NAME) : undefined;
+                contractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(FAUCET_CONTRACT_NAME): TO_CREATE_PLACEHOLDER;
+                ok = true;
+
+                break;
+
+            case RDTOKEN_CONTRACT_NAME.toUpperCase():
+                component = undefined;
+                contractJSON = RDTokenJSON;
+                contractName = RDTOKEN_CONTRACT_NAME;
+                contractABI = RDTokenJSON.abi;
+                contractBytecode = RDTokenJSON.bytecode;
+                selContractAddress = window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) : undefined;
+                contractAddress = window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) : TO_CREATE_PLACEHOLDER;
+                ok = true;
+
+                break;
         }
 
         if (!ok) {
@@ -278,39 +302,53 @@ export default class Dashboard extends React.Component {
                         <h1> Ethereum dashboard </h1>
                         <div className={statusClass}></div>
                     </div>
+
                     <Web3Connector authorization={this.authorizationHandle} />
+
                     <div className="ContractInfo-Block">
+
                         <label className="Descrpt-Label">Write the name of the contract to operate on it</label>
                         <label>Name : </label>
+
                         <input disabled={!this.state.authorized}
                             type="text"
                             value={this.state.contractName}
                             onChange={this.changeContractNameHandle} />
                         <label>Address : </label>
+
                         <input disabled={!this.state.authorized}
                             type="text"
                             value={this.state.contractAddress}
                             onChange={this.changeContractAddressHandle} />
+
                         <div className="ContractOperation-Block">
+
                             <button onClick={this.estimateCreationClickHandle}
                                 disabled={this.disableOperationButton()}>Estimate creation</button>
+
                             <button onClick={this.deployContractClickHandle}
                                 disabled={this.disableOperationButton()}>Create the contract</button>
+
                             <button onClick={this.loadContractClickHandle}
                                 disabled={this.disableOperationButton()}>Load latest version</button>
+
                             <button onClick={this.destroyClickHandle}
                                 disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
+
                             <button onClick={this.clearClickHandle}
                                 disabled={!this.isAuthorized}>Clear</button>
+
                         </div>
                     </div>
                 </div>
                 {this.state.selectedContractComponent}
+
                 <DestroyContractModal
                     showModal={this.state.showDestroyModal}
                     onCancel={this.destroyCancelClickCancel}
                     onConfirm={this.destroyConfirmClickHandle}
                 />
+
             </article>
         );
     }
