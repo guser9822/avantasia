@@ -100,8 +100,6 @@ export default class Faucet extends React.Component {
          */
         contract.methods.getBalance().call({
             from: userAddress,
-            gas: 300000,//TODO GAS LIMIT, to estimate!
-            gasPrice: 200000000000,
         }).then(res => {
             console.log(`Faucet balance :  ${res}`)
             const balanceInEther = '( ' +web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH )'
