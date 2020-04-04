@@ -1,16 +1,27 @@
 import './Dashboard.css'
 import React from 'react';
+
+//LIB
+import Web3 from 'web3'
+import ContractOperations from '../bl/blockchain-bl'
+
+//Components
 import Web3Connector from '../Web3Connector/index'
 import Modal from '../Modal/index'
-import Web3 from 'web3'
 import DestroyModal from '../DestroyModal/index'
-import ContractOperations from '../bl/blockchain-bl'
+import Faucet from '../Faucet'
+import RDToken from '../RDToken'
+
+//JSON
 import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
 import RDTokenJSON from '../../bin/src/solc-src/RDToken/RDToken.json'
-import Faucet from '../Faucet'
+
+//CONF
 const FAUCET_CONTRACT_NAME = "faucet"
 const RDTOKEN_CONTRACT_NAME = "RDToken"
 const TO_CREATE_PLACEHOLDER = "< to create >"
+
+//MODALS
 const DestroyContractModal = Modal(DestroyModal)
 export default class Dashboard extends React.Component {
 
@@ -51,37 +62,37 @@ export default class Dashboard extends React.Component {
     deployContractClickHandle = () => {
         const web3 = this.state.web3
         web3.eth.getAccounts()
-        .then(accounts => {
-            return accounts[0]
-        })
-        .then(userAccount => {
+            .then(accounts => {
+                return accounts[0]
+            })
+            .then(userAccount => {
 
-            const loadedContract = this.getContractProps(this.state.contractName)
-            if (!loadedContract) {
-                return
-            }
+                const loadedContract = this.getContractProps(this.state.contractName)
+                if (!loadedContract) {
+                    return
+                }
 
-            const contractInstance = new web3.eth.Contract(loadedContract.selectedContractABI, loadedContract.selectedContractAddress,
-                {
-                    from: this.state.userAddress, // default from address
-                    gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
-                })
-            const contractByecode = '0x' + loadedContract.selectedContractBytecode
+                const contractInstance = new web3.eth.Contract(loadedContract.selectedContractABI, loadedContract.selectedContractAddress,
+                    {
+                        from: this.state.userAddress, // default from address
+                        gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
+                    })
+                const contractByecode = '0x' + loadedContract.selectedContractBytecode
 
-            ContractOperations.estimateGasCreation(contractInstance, contractByecode).
-                then(gasEstimation => {
+                ContractOperations.estimateGasCreation(contractInstance, contractByecode).
+                    then(gasEstimation => {
 
-                    ContractOperations.deployContract(web3, userAccount, contractByecode, gasEstimation, '20000000000').
-                        then(data => {
+                        ContractOperations.deployContract(web3, userAccount, contractByecode, gasEstimation, '20000000000').
+                            then(data => {
 
-                            console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.contractAddress} with a gas estimation price ${gasEstimation}`)
-                            window.localStorage.setItem(loadedContract.selectedContractName, data.contractAddress)
+                                console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.contractAddress} with a gas estimation price ${gasEstimation}`)
+                                window.localStorage.setItem(loadedContract.selectedContractName, data.contractAddress)
 
-                        }).catch(err => console.error('Error during contract creation and deploy : ', err))
+                            }).catch(err => console.error('Error during contract creation and deploy : ', err))
 
-                }).catch(err => console.error('Error during contract gas estimation : ', err))
+                    }).catch(err => console.error('Error during contract gas estimation : ', err))
 
-        }).catch((err) => console.log(err))
+            }).catch((err) => console.log(err))
     }
 
     loadContractClickHandle = () => {
@@ -92,7 +103,7 @@ export default class Dashboard extends React.Component {
         }
 
         const { selectedContractAddress } = contractProps
-        if(selectedContractAddress){
+        if (selectedContractAddress) {
             window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress)
             console.log(`Using contract address ${contractProps.contractAddress} for contract named  ${contractProps.selectedContractName}`)
         }
@@ -104,22 +115,22 @@ export default class Dashboard extends React.Component {
 
     estimateCreationClickHandle = () => {
 
-            const contractProps = this.getContractProps(this.state.contractName)
-            if (!contractProps) {
-                console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
-                return
-            }
-            
-            const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
-                {
-                    from: this.state.userAddress, // default from address
-                    gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-                });
-            const byteCode = '0x' + contractProps.selectedContractBytecode
-                ContractOperations.estimateGasCreation(newContract, byteCode).
-                then(gasEstimation => {
-                        console.log(`GAS : ${gasEstimation}`)
-                }).catch(err => console.log(`ERROR : `, err))
+        const contractProps = this.getContractProps(this.state.contractName)
+        if (!contractProps) {
+            console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
+            return
+        }
+
+        const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
+            {
+                from: this.state.userAddress, // default from address
+                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
+            });
+        const byteCode = '0x' + contractProps.selectedContractBytecode
+        ContractOperations.estimateGasCreation(newContract, byteCode).
+            then(gasEstimation => {
+                console.log(`GAS : ${gasEstimation}`)
+            }).catch(err => console.log(`ERROR : `, err))
     }
 
     destroyConfirmClickHandle = (params) => {
@@ -174,9 +185,9 @@ export default class Dashboard extends React.Component {
     getContractAddressFromStoreByName = (contractName) => {
         const contractAddress = window.localStorage.getItem(contractName)
         return contractAddress !== 'null' &&
-          contractAddress !== undefined &&
-          contractAddress !== null 
-          ? contractAddress : undefined
+            contractAddress !== undefined &&
+            contractAddress !== null
+            ? contractAddress : undefined
     }
 
     getContractProps = (_contractName) => {
@@ -203,12 +214,12 @@ export default class Dashboard extends React.Component {
             case FAUCET_CONTRACT_NAME.toUpperCase():
                 storedContractAddress = this.getContractAddressFromStoreByName(FAUCET_CONTRACT_NAME)
 
-                component = storedContractAddress ? 
-                <Faucet userAddress={this.state.userAddress}
-                    contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
-                    json={FaucetJSON}
-                    web3={this.state.web3}/> :
-                     undefined;
+                component = storedContractAddress ?
+                    <Faucet userAddress={this.state.userAddress}
+                        contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+                        json={FaucetJSON}
+                        web3={this.state.web3} />
+                    : undefined;
                 contractJSON = FaucetJSON;
                 contractName = FAUCET_CONTRACT_NAME;
                 contractABI = FaucetJSON.abi;
@@ -221,7 +232,12 @@ export default class Dashboard extends React.Component {
             case RDTOKEN_CONTRACT_NAME.toUpperCase():
                 storedContractAddress = this.getContractAddressFromStoreByName(RDTOKEN_CONTRACT_NAME)
 
-                component =  storedContractAddress ? undefined : undefined;
+                component = storedContractAddress ?
+                    <RDToken userAddress={this.state.userAddress}
+                        contractAddress={window.localStorage.getItem(RDTOKEN_CONTRACT_NAME)}
+                        json={RDTokenJSON}
+                        web3={this.state.web3} />
+                    : undefined;
                 contractJSON = RDTokenJSON;
                 contractName = RDTOKEN_CONTRACT_NAME;
                 contractABI = RDTokenJSON.abi;
