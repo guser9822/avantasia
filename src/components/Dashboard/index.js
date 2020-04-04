@@ -50,16 +50,18 @@ export default class Dashboard extends React.Component {
 
     deployContractClickHandle = () => {
         const web3 = this.state.web3
-        web3.eth.getAccounts().then(accounts => {
+        web3.eth.getAccounts()
+        .then(accounts => {
             return accounts[0]
-        }).then(userAccount => {
+        })
+        .then(userAccount => {
 
             const loadedContract = this.getContractProps(this.state.contractName)
             if (!loadedContract) {
                 return
             }
 
-            const contractInstance = new web3.eth.Contract(loadedContract.selectedContractABI, loadedContract.contractAddress,
+            const contractInstance = new web3.eth.Contract(loadedContract.selectedContractABI, loadedContract.selectedContractAddress,
                 {
                     from: this.state.userAddress, // default from address
                     gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
@@ -82,23 +84,6 @@ export default class Dashboard extends React.Component {
         }).catch((err) => console.log(err))
     }
 
-    deployContract = (selectedContractName, userAccount, contactByteCode) => {
-
-        this.state.web3.
-            eth.
-            sendTransaction({
-                from: userAccount,
-                to: 0,
-                data: contactByteCode,
-                gas: 300000,//GAS LIMIT, to estimate!
-                gasPrice: 200000000000,
-            }).then(data => {
-                window.localStorage.setItem(selectedContractName, data.contractAddress)
-            }).catch(err => {
-                console.log(`ERROR : `, err)
-            })
-    }
-
     loadContractClickHandle = () => {
 
         const contractProps = this.getContractProps(this.state.contractName)
@@ -119,25 +104,22 @@ export default class Dashboard extends React.Component {
 
     estimateCreationClickHandle = () => {
 
-        const contractProps = this.getContractProps(this.state.contractName)
-        if (!contractProps) {
-            console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
-            return
-        }
-        
-        const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
-            {
-                from: this.state.userAddress, // default from address
-                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-            });
-        const byteCode = '0x' + contractProps.selectedContractBytecode
-        newContract.
-            deploy({ data: byteCode }).
-            estimateGas().then(gas => {
-                console.log(`GAS : ${gas}`)
-            }).catch(err => {
-                console.log(`ERROR : `, err)
-            })
+            const contractProps = this.getContractProps(this.state.contractName)
+            if (!contractProps) {
+                console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
+                return
+            }
+            
+            const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
+                {
+                    from: this.state.userAddress, // default from address
+                    gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
+                });
+            const byteCode = '0x' + contractProps.selectedContractBytecode
+                ContractOperations.estimateGasCreation(newContract, byteCode).
+                then(gasEstimation => {
+                        console.log(`GAS : ${gasEstimation}`)
+                }).catch(err => console.log(`ERROR : `, err))
     }
 
     destroyConfirmClickHandle = (params) => {
@@ -189,6 +171,14 @@ export default class Dashboard extends React.Component {
 
     }
 
+    getContractAddressFromStoreByName = (contractName) => {
+        const contractAddress = window.localStorage.getItem(contractName)
+        return contractAddress !== 'null' &&
+          contractAddress !== undefined &&
+          contractAddress !== null 
+          ? contractAddress : undefined
+    }
+
     getContractProps = (_contractName) => {
 
         if (!_contractName || !_contractName.length) {
@@ -207,34 +197,38 @@ export default class Dashboard extends React.Component {
 
 
         const genContractName = _contractName.toUpperCase()
+        let storedContractAddress;
+
         switch (genContractName) {
-
             case FAUCET_CONTRACT_NAME.toUpperCase():
+                storedContractAddress = this.getContractAddressFromStoreByName(FAUCET_CONTRACT_NAME)
 
-                component = <Faucet userAddress={this.state.userAddress}
+                component = storedContractAddress ? 
+                <Faucet userAddress={this.state.userAddress}
                     contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
                     json={FaucetJSON}
-                    web3={this.state.web3}></Faucet>;
+                    web3={this.state.web3}/> :
+                     undefined;
                 contractJSON = FaucetJSON;
                 contractName = FAUCET_CONTRACT_NAME;
                 contractABI = FaucetJSON.abi;
                 contractBytecode = FaucetJSON.bytecode;
-                selContractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(FAUCET_CONTRACT_NAME) : undefined;
-                contractAddress = window.localStorage.getItem(FAUCET_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(FAUCET_CONTRACT_NAME): TO_CREATE_PLACEHOLDER;
+                selContractAddress = storedContractAddress;
+                contractAddress = storedContractAddress ? storedContractAddress : TO_CREATE_PLACEHOLDER;
                 ok = true;
-
                 break;
 
             case RDTOKEN_CONTRACT_NAME.toUpperCase():
-                component = undefined;
+                storedContractAddress = this.getContractAddressFromStoreByName(RDTOKEN_CONTRACT_NAME)
+
+                component =  storedContractAddress ? undefined : undefined;
                 contractJSON = RDTokenJSON;
                 contractName = RDTOKEN_CONTRACT_NAME;
                 contractABI = RDTokenJSON.abi;
                 contractBytecode = RDTokenJSON.bytecode;
-                selContractAddress = window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) : undefined;
-                contractAddress = window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) !== "null" ? window.localStorage.getItem(RDTOKEN_CONTRACT_NAME) : TO_CREATE_PLACEHOLDER;
+                selContractAddress = storedContractAddress;
+                contractAddress = storedContractAddress ? storedContractAddress : TO_CREATE_PLACEHOLDER;
                 ok = true;
-
                 break;
         }
 
