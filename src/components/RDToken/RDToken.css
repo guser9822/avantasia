@@ -15,6 +15,11 @@
     padding: 10px 10px 10px 10px;
 }
 
-.RDToken-Label {
-    margin-left: 10px;
+.RDToken-Form {
+    display: flex;
+    flex-direction: column;
+}
+
+.RDToken-Form-Elem {
+    display: flex;
 }
