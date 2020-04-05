@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "../../../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../../../node_modules/@openzeppelin/contracts/ownership/Ownable.sol";
 
 // Our first contract is a faucet!
 contract Faucet is Ownable {

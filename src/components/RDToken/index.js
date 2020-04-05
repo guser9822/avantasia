@@ -8,6 +8,7 @@ const TOTAL_SUPPLY = 'total_supply';
 const ACCOUNT_BALANCE = 'account_balance';
 const TRANSFER = 'transfer';
 
+const CONTRACT_DECIMALS = 2
 export default class RDToken extends React.Component {
 
     constructor(props) {
@@ -29,6 +30,15 @@ export default class RDToken extends React.Component {
             balanceAtAddress: undefined,
             rdTokenUnit: 0,
         }
+    }
+
+    clearForm = () => {
+        this.setState({
+            totalSupply: undefined,
+            otherAddress: "",
+            balanceAtAddress: undefined,
+            rdTokenUnit: 0,
+        })
     }
 
     onOperationClick = (operation) => {
@@ -60,7 +70,7 @@ export default class RDToken extends React.Component {
         }
 
         try {
-            console.log(rdTokenContract)
+
             rdTokenContract
                 .methods
                 .transfer(otherAddress, tokenAmount).estimateGas({
@@ -68,7 +78,8 @@ export default class RDToken extends React.Component {
                 }).then(gas => {
 
                     console.log(`transferTokens gas estimation ${gas}`)
-
+                    const converted = tokenAmount * Math.pow(10, CONTRACT_DECIMALS)
+                    console.log('Converted ', converted)
                     rdTokenContract.
                         methods
                         .transfer(otherAddress, tokenAmount)
@@ -78,6 +89,7 @@ export default class RDToken extends React.Component {
                             gasPrice: 200000000000,
                         }).then(res => {
                             console.log(`Transferred ${tokenAmount} RDT from ${userAddress} to ${otherAddress} : `, res)
+                            this.clearForm()
                         }).catch(err => console.error(`Error while invoking transferTokens : `, err))
 
                 }).catch(err => console.error(`Error while invoking transferTokens gas estimation : `, err))
@@ -188,6 +200,8 @@ export default class RDToken extends React.Component {
 
                         <button onClick={() => this.onOperationClick(TRANSFER)}
                             disabled={this.isButtonDisabled()}> Transfer </button>
+
+                        <button onClick={() => this.clearForm()}> Clear </button>
                     </div>
                 </div>
             </article>
