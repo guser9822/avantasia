@@ -49,22 +49,30 @@ export default class RDToken extends React.Component {
 
     getBalanceByAddress = (userAddress, address, rdTokenContract) => {
 
-        if (!userAddress || ! address || ! rdTokenContract) {
+        if (!userAddress || !address || !rdTokenContract) {
             console.error('Error in getTotalSuppy, on or more input parameter is invalid.')
             return
         }
 
-        rdTokenContract.methods.
-            balanceOf(address).
-            call({ from: userAddress })
-            .then(balance => {
-                console.log(`The balance for the adddress ${address} is ${balance} RDT`)
-                this.setState({
-                    balanceAtAddress : `( ${balance} RDT)`
-                })
-            }).catch(err => console.error(`Error while invoking totalSupply : `, err))
+        try {
 
-        return 'gathering....'
+            rdTokenContract.methods.
+                balanceOf(address)
+                .call({ from: userAddress })
+                .then(balance => {
+                    console.log(`The balance for the adddress ${address} is ${balance} RDT`)
+                    this.setState({
+                        balanceAtAddress: `( ${balance} RDT)`
+                    })
+                }).catch(err => console.error(`Error while invoking totalSupply : `, err))
+
+            return 'gathering....'
+
+        } catch (error) {
+            console.error('getBalanceByAddress, generic error : ', error)
+            return `${error}`
+        }
+
     }
 
     getTotalSupply = (userAddress, rdTokenContract) => {
