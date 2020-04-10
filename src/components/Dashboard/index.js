@@ -6,23 +6,24 @@ import Web3 from 'web3'
 import ContractOperations from '../bl/blockchain-bl'
 
 //Components
-import Web3Connector from '../Web3Connector/index'
+import Web3Connector from '../Web3Connector'
 import Modal from '../Modal/index'
-import DestroyModal from '../DestroyModal/index'
-import Faucet from '../Faucet'
-import RDToken from '../RDToken'
+import DestroyModal from '../DestroyModal'
+import { FaucetDashboardBuilder } from '../Faucet'
+import { RDTokenDashboardBuilder } from '../RDToken'
+import { RDTokenFaucetDashboardBuilder } from '../RDTokenFaucet'
 
-//JSON
-import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
-import RDTokenJSON from '../../bin/src/solc-src/RDToken/RDToken.json'
+//CONSTS
+import {
+    FAUCET_CONTRACT_NAME,
+    RDTOKEN_CONTRACT_NAME,
+    RDTOKEN_FAUCET_CONTRACT_NAME,
+} from '../common'
 
-//CONF
-const FAUCET_CONTRACT_NAME = "faucet"
-const RDTOKEN_CONTRACT_NAME = "RDToken"
-const TO_CREATE_PLACEHOLDER = "< to create >"
 
 //MODALS
 const DestroyContractModal = Modal(DestroyModal)
+
 export default class Dashboard extends React.Component {
 
     constructor(props) {
@@ -39,13 +40,22 @@ export default class Dashboard extends React.Component {
     initState = () => {
         return {
             contractName: "",
-            contractAddress: "",
+            ...this.initContractProps()
+        }
+    }
+
+    initContractProps = () => {
+        return {
             selectedContractComponent: undefined,
             selectedContractJSON: undefined,
             selectedContractName: undefined,
             selectedContractABI: undefined,
             selectedContractBytecode: undefined,
             selectedContractAddress: "",
+            constructorParamOrder: [],
+            constructorParamValidator: undefined,
+            constructorParamValues: [],
+            additionalComponent: undefined,
         }
     }
 
@@ -78,19 +88,24 @@ export default class Dashboard extends React.Component {
                         gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
                     })
                 const contractByecode = '0x' + loadedContract.selectedContractBytecode
+                const constrParam = this.state.constructorParamValues
 
-                ContractOperations.estimateGasCreation(contractInstance, contractByecode).
-                    then(gasEstimation => {
+                ContractOperations.estimateGasCreation(contractInstance, contractByecode, constrParam)
+                    .then(gasEstimation => {
 
-                        ContractOperations.deployContract(web3, userAccount, contractByecode, gasEstimation, '20000000000').
-                            then(data => {
-
-                                console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.contractAddress} with a gas estimation price ${gasEstimation}`)
-                                window.localStorage.setItem(loadedContract.selectedContractName, data.contractAddress)
-
+                        ContractOperations.deployContract(userAccount, contractInstance, contractByecode, gasEstimation, '20000000000', constrParam)
+                            .then(data => {
+                                console.log('data ', data)
+                                console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.address} with a gas estimation price ${gasEstimation}`)
+                                window.localStorage.setItem(loadedContract.selectedContractName.toUpperCase(), data.address)
+                                this.setState({
+                                    selectedContractAddress: data.address
+                                })
                             }).catch(err => console.error('Error during contract creation and deploy : ', err))
 
-                    }).catch(err => console.error('Error during contract gas estimation : ', err))
+                    }).catch(err => {
+                        console.error('Error during contract gas estimation : ', err)
+                    })
 
             }).catch((err) => console.log(err))
     }
@@ -104,8 +119,8 @@ export default class Dashboard extends React.Component {
 
         const { selectedContractAddress } = contractProps
         if (selectedContractAddress) {
-            window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress)
-            console.log(`Using contract address ${contractProps.contractAddress} for contract named  ${contractProps.selectedContractName}`)
+            window.localStorage.setItem(contractProps.selectedContractName.toUpperCase(), contractProps.selectedContractAddress)
+            console.log(`Using contract address ${contractProps.selectedContractAddress} for contract named ${contractProps.selectedContractName}`)
         }
 
         this.setState({
@@ -120,15 +135,15 @@ export default class Dashboard extends React.Component {
             console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
             return
         }
-
         const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
             {
                 from: this.state.userAddress, // default from address
                 gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
             });
         const byteCode = '0x' + contractProps.selectedContractBytecode
-        ContractOperations.estimateGasCreation(newContract, byteCode).
-            then(gasEstimation => {
+        const constrParam = this.state.constructorParamValues
+        ContractOperations.estimateGasCreation(newContract, byteCode, constrParam)
+            .then(gasEstimation => {
                 console.log(`GAS : ${gasEstimation}`)
             }).catch(err => console.log(`ERROR : `, err))
     }
@@ -165,29 +180,23 @@ export default class Dashboard extends React.Component {
 
         /**
          * Use send for deleting a contract, it will generate a transaction
-         * (it will modofy the contract state) and the owner will get back his
+         * (it will modify the contract state) and the owner will get back his
          * money
          * **/
         contractInstance.methods.destroy().send({
             from: this.state.userAddress,
             gas: 300000,//TODO GAS LIMIT, to estimate!
             gasPrice: 200000000000,
-        }).
-            then((res) => {
+        })
+            .then((res) => {
+                window.localStorage.removeItem(contractName.toUpperCase())
+                this.clearHandle()
                 console.log(`Contract  ${contractName} at  ${contractAddress} destroyed : `, res)
-            }).
-            catch((err) => {
+            })
+            .catch((err) => {
                 console.log(`Error destroiyng  ${contractName} at  ${contractAddress} : `, err)
             })
 
-    }
-
-    getContractAddressFromStoreByName = (contractName) => {
-        const contractAddress = window.localStorage.getItem(contractName)
-        return contractAddress !== 'null' &&
-            contractAddress !== undefined &&
-            contractAddress !== null
-            ? contractAddress : undefined
     }
 
     getContractProps = (_contractName) => {
@@ -197,70 +206,40 @@ export default class Dashboard extends React.Component {
             return
         }
 
-        let ok = false;
-        let component = undefined;
-        let contractJSON = undefined;
-        let contractName = undefined;
-        let contractABI = undefined;
-        let contractBytecode = undefined;
-        let selContractAddress = undefined;
-        let contractAddress = undefined;
-
-
+        let error = true;
+        let nextProps = this.initContractProps()
         const genContractName = _contractName.toUpperCase()
-        let storedContractAddress;
 
         switch (genContractName) {
-            case FAUCET_CONTRACT_NAME.toUpperCase():
-                storedContractAddress = this.getContractAddressFromStoreByName(FAUCET_CONTRACT_NAME)
 
-                component = storedContractAddress ?
-                    <Faucet userAddress={this.state.userAddress}
-                        contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
-                        json={FaucetJSON}
-                        web3={this.state.web3} />
-                    : undefined;
-                contractJSON = FaucetJSON;
-                contractName = FAUCET_CONTRACT_NAME;
-                contractABI = FaucetJSON.abi;
-                contractBytecode = FaucetJSON.bytecode;
-                selContractAddress = storedContractAddress;
-                contractAddress = storedContractAddress ? storedContractAddress : TO_CREATE_PLACEHOLDER;
-                ok = true;
+            case FAUCET_CONTRACT_NAME:
+                nextProps = FaucetDashboardBuilder(nextProps, this.state.userAddress, this.state.web3)
+                error = false;
                 break;
 
-            case RDTOKEN_CONTRACT_NAME.toUpperCase():
-                storedContractAddress = this.getContractAddressFromStoreByName(RDTOKEN_CONTRACT_NAME)
+            case RDTOKEN_CONTRACT_NAME:
+                nextProps = RDTokenDashboardBuilder(nextProps, this.state.userAddress, this.state.web3)
+                error = false;
+                break;
 
-                component = storedContractAddress ?
-                    <RDToken userAddress={this.state.userAddress}
-                        contractAddress={window.localStorage.getItem(RDTOKEN_CONTRACT_NAME)}
-                        json={RDTokenJSON}
-                        web3={this.state.web3} />
-                    : undefined;
-                contractJSON = RDTokenJSON;
-                contractName = RDTOKEN_CONTRACT_NAME;
-                contractABI = RDTokenJSON.abi;
-                contractBytecode = RDTokenJSON.bytecode;
-                selContractAddress = storedContractAddress;
-                contractAddress = storedContractAddress ? storedContractAddress : TO_CREATE_PLACEHOLDER;
-                ok = true;
+            case RDTOKEN_FAUCET_CONTRACT_NAME:
+                nextProps = RDTokenFaucetDashboardBuilder(nextProps, this.state.userAddress, this.state.web3)
+                error = false;
+                break;
+
+            default:
+                console.log('Nothing....')
                 break;
         }
 
-        if (!ok) {
+        if (error) {
             console.error(`No contract found with name  ${_contractName}`)
+            this.clearHandle()
             return
         }
 
         return {
-            selectedContractComponent: component,
-            selectedContractJSON: contractJSON,
-            selectedContractName: contractName,
-            selectedContractABI: contractABI,
-            selectedContractBytecode: contractBytecode,
-            selectedContractAddress: selContractAddress,
-            contractAddress: contractAddress,
+            ...nextProps
         }
     }
 
@@ -270,14 +249,12 @@ export default class Dashboard extends React.Component {
         })
     }
 
-    changeContractAddressHandle = (event) => {
-        this.setState({
-            contractAddress: event.target.value
-        })
-    }
-
-    disableOperationButton = () => {
-        return !this.state.authorized || !this.state.contractName.length
+    disableOperationButton = (evaluateAdditionalFields) => {
+        return !this.state.authorized ||
+            !this.state.contractName.length ||
+            (evaluateAdditionalFields &&
+                this.state.additionalComponent &&
+                !this.state.constructorParamValidator(this.state.constructorParamValues))
     }
 
     isAuthorized = () => {
@@ -297,14 +274,23 @@ export default class Dashboard extends React.Component {
         this.setState({ showDestroyModal: false })
     }
 
-    clearClickHandle = () => {
+    clearHandle = () => {
         this.setState({
             ...this.initState()
         })
     }
 
+    constructonParamsChangeHandle = (params) => {
+        this.setState({
+            constructorParamValues: [...params]
+        })
+    }
+
     render() {
+
         const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
+        const ContractAdditional = this.state.additionalComponent ? this.state.additionalComponent : undefined
+
         return (
             <article>
                 <div>
@@ -328,24 +314,30 @@ export default class Dashboard extends React.Component {
 
                         <input disabled={!this.state.authorized}
                             type="text"
-                            value={this.state.contractAddress}
-                            onChange={this.changeContractAddressHandle} />
+                            value={this.state.selectedContractAddress}
+                            readOnly
+                        />
+
+                        {
+                            ContractAdditional ?
+                                <ContractAdditional onParamsChange={this.constructonParamsChangeHandle} /> : undefined
+                        }
 
                         <div className="ContractOperation-Block">
 
                             <button onClick={this.estimateCreationClickHandle}
-                                disabled={this.disableOperationButton()}>Estimate creation</button>
+                                disabled={this.disableOperationButton(true)}>Estimate creation</button>
 
                             <button onClick={this.deployContractClickHandle}
-                                disabled={this.disableOperationButton()}>Create the contract</button>
+                                disabled={this.disableOperationButton(true)}>Create the contract</button>
 
                             <button onClick={this.loadContractClickHandle}
-                                disabled={this.disableOperationButton()}>Load latest version</button>
+                                disabled={this.disableOperationButton(false)}>Load latest version</button>
 
                             <button onClick={this.destroyClickHandle}
-                                disabled={!this.isAuthorized} disabled={this.disableOperationButton()}>Destroy a contract</button>
+                                disabled={this.disableOperationButton(false)}>Destroy a contract</button>
 
-                            <button onClick={this.clearClickHandle}
+                            <button onClick={this.clearHandle}
                                 disabled={!this.isAuthorized}>Clear</button>
 
                         </div>

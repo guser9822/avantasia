@@ -1,11 +1,21 @@
-const estimateGasCreation = (contractInstance, bytecode) => {
+const estimateGasCreation = (contractInstance, bytecode, constructorParams) => {
     return new Promise((resolve, reject) => {
         if (!contractInstance || !bytecode) {
             reject('No contract instance or bytecode given')
         }
-        contractInstance.
-            deploy({ data: bytecode }).
-            estimateGas().then(gas => {
+
+        const input = {
+            data: bytecode
+        }
+
+        if (constructorParams && constructorParams.length) {
+            input.arguments = [...constructorParams]
+        }
+
+        contractInstance
+            .deploy(input)
+            .estimateGas()
+            .then(gas => {
                 resolve(gas)
             }).catch(err => {
                 reject(err)
@@ -13,22 +23,44 @@ const estimateGasCreation = (contractInstance, bytecode) => {
     })
 }
 
-const deployContract = (web3, userAccount, contractBytecode, gasLimit, gasPrice) => {
+const deployContract = (
+    userAccount,
+    contractInstance,
+    contractBytecode,
+    gasLimit,
+    gasPrice,
+    constructorParams) => {
+
     return new Promise((resolve, reject) => {
-        web3.
-            eth.
-            sendTransaction({
+
+        let input = {
+            data: contractBytecode
+        }
+
+        if (constructorParams && constructorParams.length) {
+            input.arguments = [...constructorParams]
+        }
+
+        contractInstance
+            .deploy(input)
+            .send({
                 from: userAccount,
-                to: 0,
-                data: contractBytecode,
-                gas: gasLimit,//GAS LIMIT, to estimate!
-                gasPrice: gasPrice,
-            }).then(data => {
+                gas: gasLimit,
+                gasPrice,
+            })
+            .then(res => {
+
+                const data = {
+                    ...res.options
+                }
                 resolve(data)
-            }).catch(err => {
+            })
+            .catch(err => {
                 reject(err)
             })
+
     })
+
 }
 
 const ContractOperations = {

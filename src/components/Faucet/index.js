@@ -1,10 +1,16 @@
 import React from 'react';
 import './Faucet.css'
+import FaucetJSON from '../../bin/src/solc-src/faucet/Faucet.json'
+import { getContractAddressFromStoreByName } from '../bl/utility'
+
+import {
+    FAUCET_CONTRACT_NAME,
+    EHTER_UNIT_NAME,
+} from '../common'
+
 const WITHDRAW = 'withdraw';
 const DEPOSIT = 'deposit';
 const BALANCE = 'balance';
-const EHTER_UNIT_NAME = 'ether';
-const DEFAULT_GAS_LIMIT = 5000000
 
 export default class Faucet extends React.Component {
 
@@ -54,6 +60,9 @@ export default class Faucet extends React.Component {
                     faucetBalance: val,
                 })
                 break;
+            default:
+                console.log('Nothing....')
+                break;
         }
     }
 
@@ -64,8 +73,8 @@ export default class Faucet extends React.Component {
         }
 
         const wei = web3.utils.toWei(String(amount), EHTER_UNIT_NAME)
-        contract.methods.withdraw(wei).
-            estimateGas({
+        contract.methods.withdraw(wei)
+            .estimateGas({
                 from: userAddress,
             }).then(gesEst => {
 
@@ -102,13 +111,13 @@ export default class Faucet extends React.Component {
             from: userAddress,
         }).then(res => {
             console.log(`Faucet balance :  ${res}`)
-            const balanceInEther = '( ' +web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH )'
+            const balanceInEther = '( ' + web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH )'
             this.setState({
                 faucetBalance: balanceInEther,
             })
             return res
         }).catch(ret => {
-            console.log(`Faucet balance : `,ret)
+            console.log(`Faucet balance : `, ret)
             return 'error..'
         })
         return 'gathering...'
@@ -163,4 +172,20 @@ export default class Faucet extends React.Component {
         );
     }
 
+}
+
+export function FaucetDashboardBuilder(nextProps, userAddress, web3) {
+    const storedContractAddress = getContractAddressFromStoreByName(FAUCET_CONTRACT_NAME)
+    nextProps.selectedContractComponent = storedContractAddress ?
+        <Faucet userAddress={userAddress}
+            contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
+            json={FaucetJSON}
+            web3={web3} />
+        : undefined;
+    nextProps.selectedContractJSON = FaucetJSON;
+    nextProps.selectedContractName = FAUCET_CONTRACT_NAME;
+    nextProps.selectedContractABI = FaucetJSON.abi;
+    nextProps.selectedContractBytecode = FaucetJSON.bytecode;
+    nextProps.selectedContractAddress = storedContractAddress ? storedContractAddress : "";
+    return nextProps
 }

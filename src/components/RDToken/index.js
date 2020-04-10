@@ -1,8 +1,11 @@
 import React from 'react';
 import './RDToken.css'
+import RDTokenJSON from '../../bin/src/solc-src/RDToken/RDToken.json'
+import { getContractAddressFromStoreByName } from '../bl/utility'
 
-const EHTER_UNIT_NAME = 'ether';
-const DEFAULT_GAS_LIMIT = 5000000;
+import {
+    RDTOKEN_CONTRACT_NAME,
+} from '../common'
 
 const TOTAL_SUPPLY = 'total_supply';
 const ACCOUNT_BALANCE = 'account_balance';
@@ -49,16 +52,20 @@ export default class RDToken extends React.Component {
                 this.setState({
                     totalSupply: totSupply
                 })
-                break
+                break;
             case ACCOUNT_BALANCE:
                 const addrBal = this.getBalanceByAddress(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract);
                 this.setState({
                     balanceAtAddress: addrBal
                 })
-                break
+                break;
             case TRANSFER:
                 this.transferTokens(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract, this.state.rdTokenUnit);
-                break
+                break;
+            default:
+                console.log('Nothing....')
+                break;
+
         }
     }
 
@@ -80,8 +87,8 @@ export default class RDToken extends React.Component {
                     console.log(`transferTokens gas estimation ${gas}`)
                     const converted = tokenAmount * Math.pow(10, CONTRACT_DECIMALS)
                     console.log('Converted ', converted)
-                    rdTokenContract.
-                        methods
+                    rdTokenContract
+                    .methods
                         .transfer(otherAddress, tokenAmount)
                         .send({
                             from: userAddress,
@@ -109,8 +116,8 @@ export default class RDToken extends React.Component {
 
         try {
 
-            rdTokenContract.methods.
-                balanceOf(address)
+            rdTokenContract.methods
+            .balanceOf(address)
                 .call({ from: userAddress })
                 .then(balance => {
                     console.log(`The balance for the adddress ${address} is ${balance} RDT`)
@@ -208,4 +215,20 @@ export default class RDToken extends React.Component {
         );
     }
 
+}
+
+export function RDTokenDashboardBuilder(nextProps, userAddress, web3) {
+    const storedContractAddress = getContractAddressFromStoreByName(RDTOKEN_CONTRACT_NAME)
+    nextProps.selectedContractComponent = storedContractAddress ?
+        <RDToken userAddress={userAddress}
+            contractAddress={window.localStorage.getItem(RDTOKEN_CONTRACT_NAME)}
+            json={RDTokenJSON}
+            web3={web3} />
+        : undefined;
+    nextProps.selectedContractJSON = RDTokenJSON;
+    nextProps.selectedContractName = RDTOKEN_CONTRACT_NAME;
+    nextProps.selectedContractABI = RDTokenJSON.abi;
+    nextProps.selectedContractBytecode = RDTokenJSON.bytecode;
+    nextProps.selectedContractAddress = storedContractAddress ? storedContractAddress : "";
+    return nextProps
 }
