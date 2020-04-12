@@ -1,4 +1,14 @@
+.RDTokenAdditional-Main{
+    width: 100%;
+}
+
 .RDTokenAdditional {
     display: flex;
-    flex-direction: column
+    flex-direction: column;
+    width: 90%;
+}
+
+.RDTokenAdditional-BodyElem {
+    display: flex;
+    flex-direction: column;
 }

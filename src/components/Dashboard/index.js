@@ -1,9 +1,12 @@
-import './Dashboard.css'
 import React from 'react';
+import './Dashboard.css'
 
 //LIB
 import Web3 from 'web3'
 import ContractOperations from '../bl/blockchain-bl'
+import {
+    persistConstructorParamsIntoLocalStorage,
+} from '../bl/utility'
 
 //Components
 import Web3Connector from '../Web3Connector'
@@ -18,6 +21,8 @@ import {
     FAUCET_CONTRACT_NAME,
     RDTOKEN_CONTRACT_NAME,
     RDTOKEN_FAUCET_CONTRACT_NAME,
+    SAVE_COMMAND,
+    REMOVE_COMMAND,
 } from '../common'
 
 
@@ -89,15 +94,24 @@ export default class Dashboard extends React.Component {
                     })
                 const contractByecode = '0x' + loadedContract.selectedContractBytecode
                 const constrParam = this.state.constructorParamValues
-
+                const contractName = loadedContract.selectedContractName
                 ContractOperations.estimateGasCreation(contractInstance, contractByecode, constrParam)
                     .then(gasEstimation => {
 
                         ContractOperations.deployContract(userAccount, contractInstance, contractByecode, gasEstimation, '20000000000', constrParam)
                             .then(data => {
+
                                 console.log('data ', data)
-                                console.log(`New contract ${loadedContract.selectedContractName} deployed at address ${data.address} with a gas estimation price ${gasEstimation}`)
-                                window.localStorage.setItem(loadedContract.selectedContractName.toUpperCase(), data.address)
+                                console.log(`New contract ${contractName} deployed at address ${data.address} with a gas estimation price ${gasEstimation}`)
+                                window.localStorage.setItem(contractName, data.address)
+
+                                if (loadedContract.additionalComponent) {
+                                    persistConstructorParamsIntoLocalStorage(contractName,
+                                        data.jsonInterface,
+                                        constrParam,
+                                        SAVE_COMMAND)
+                                }
+
                                 this.setState({
                                     selectedContractAddress: data.address
                                 })
@@ -119,33 +133,13 @@ export default class Dashboard extends React.Component {
 
         const { selectedContractAddress } = contractProps
         if (selectedContractAddress) {
-            window.localStorage.setItem(contractProps.selectedContractName.toUpperCase(), contractProps.selectedContractAddress)
-            console.log(`Using contract address ${contractProps.selectedContractAddress} for contract named ${contractProps.selectedContractName}`)
+            window.localStorage.setItem(contractProps.selectedContractName, contractProps.selectedContractAddress);
+            console.log(`Using contract address ${contractProps.selectedContractAddress} for contract named ${contractProps.selectedContractName}`);
         }
 
         this.setState({
             ...contractProps
         })
-    }
-
-    estimateCreationClickHandle = () => {
-
-        const contractProps = this.getContractProps(this.state.contractName)
-        if (!contractProps) {
-            console.error(`Cannot estimate creation for the contract named ${this.state.contractName}`)
-            return
-        }
-        const newContract = new this.state.web3.eth.Contract(contractProps.selectedContractABI, contractProps.selectedContractAddress,
-            {
-                from: this.state.userAddress, // default from address
-                gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
-            });
-        const byteCode = '0x' + contractProps.selectedContractBytecode
-        const constrParam = this.state.constructorParamValues
-        ContractOperations.estimateGasCreation(newContract, byteCode, constrParam)
-            .then(gasEstimation => {
-                console.log(`GAS : ${gasEstimation}`)
-            }).catch(err => console.log(`ERROR : `, err))
     }
 
     destroyConfirmClickHandle = (params) => {
@@ -160,9 +154,9 @@ export default class Dashboard extends React.Component {
             console.error(`Cannot estimate creation for the contract named ${contractName}`)
             return
         }
-
+        const selContractName = contractProps.selectedContractName
         if (contractProps.selectedContractAddress !== contractAddress) {
-            console.error(`Cannot destroy the contract at the address ${contractAddress} named ${contractName} which is already bound to the contract at ${contractProps.selectedContractAddress}`)
+            console.error(`Cannot destroy the contract at the address ${contractAddress} named ${selContractName} which is already bound to the contract at ${contractProps.selectedContractAddress}`)
             return
         }
 
@@ -174,7 +168,7 @@ export default class Dashboard extends React.Component {
 
 
         if (!contractInstance) {
-            console.log(`Error while creating the instance for the contract ${contractName} at address ${contractAddress}`)
+            console.log(`Error while creating the instance for the contract ${selContractName} at address ${contractAddress}`)
             return
         }
 
@@ -189,12 +183,20 @@ export default class Dashboard extends React.Component {
             gasPrice: 200000000000,
         })
             .then((res) => {
-                window.localStorage.removeItem(contractName.toUpperCase())
+
+                if (contractProps.additionalComponent) {
+                    persistConstructorParamsIntoLocalStorage(selContractName,
+                        contractProps.selectedContractABI,
+                        contractProps.constructorParamValues,
+                        REMOVE_COMMAND)
+                }
+
+                window.localStorage.removeItem(selContractName)
                 this.clearHandle()
-                console.log(`Contract  ${contractName} at  ${contractAddress} destroyed : `, res)
+                console.log(`Contract  ${selContractName} at  ${contractAddress} destroyed : `, res)
             })
             .catch((err) => {
-                console.log(`Error destroiyng  ${contractName} at  ${contractAddress} : `, err)
+                console.log(`Error destroiyng  ${selContractName} at  ${contractAddress} : `, err)
             })
 
     }
@@ -320,13 +322,13 @@ export default class Dashboard extends React.Component {
 
                         {
                             ContractAdditional ?
-                                <ContractAdditional onParamsChange={this.constructonParamsChangeHandle} /> : undefined
+                                <div className="Dashboard-ConstructorParams">
+                                    <h4>Contract additional parameters </h4>
+                                    <ContractAdditional onParamsChange={this.constructonParamsChangeHandle} />
+                                </div> : undefined
                         }
 
                         <div className="ContractOperation-Block">
-
-                            <button onClick={this.estimateCreationClickHandle}
-                                disabled={this.disableOperationButton(true)}>Estimate creation</button>
 
                             <button onClick={this.deployContractClickHandle}
                                 disabled={this.disableOperationButton(true)}>Create the contract</button>
@@ -343,6 +345,7 @@ export default class Dashboard extends React.Component {
                         </div>
                     </div>
                 </div>
+
                 {this.state.selectedContractComponent}
 
                 <DestroyContractModal

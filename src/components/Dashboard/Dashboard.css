@@ -51,3 +51,14 @@
     border-style: solid;
     border-radius: 5px;
 }
+
+.Dashboard-ConstructorParams {
+    display: flex;
+    flex-direction: column;
+    border: 1px;
+    border-style: groove;
+    border-radius: 5px;
+    margin-top: 15px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}

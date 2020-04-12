@@ -1,7 +1,11 @@
 import React from 'react';
 import './RDToken.css'
 import RDTokenJSON from '../../bin/src/solc-src/RDToken/RDToken.json'
-import { getContractAddressFromStoreByName } from '../bl/utility'
+import {
+    getContractAddressFromStoreByName,
+    amountFromToken,
+    amountToToken,
+} from '../bl/utility'
 
 import {
     RDTOKEN_CONTRACT_NAME,
@@ -10,6 +14,8 @@ import {
 const TOTAL_SUPPLY = 'total_supply';
 const ACCOUNT_BALANCE = 'account_balance';
 const TRANSFER = 'transfer';
+const APPROVE = 'approve';
+const ALLOWANCE = 'allowance';
 
 const CONTRACT_DECIMALS = 2
 export default class RDToken extends React.Component {
@@ -48,10 +54,7 @@ export default class RDToken extends React.Component {
 
         switch (operation) {
             case TOTAL_SUPPLY:
-                const totSupply = this.getTotalSupply(this.state.userAddress, this.state.rdTokenContract)
-                this.setState({
-                    totalSupply: totSupply
-                })
+                this.getTotalSupply(this.state.userAddress, this.state.rdTokenContract)
                 break;
             case ACCOUNT_BALANCE:
                 const addrBal = this.getBalanceByAddress(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract);
@@ -62,12 +65,89 @@ export default class RDToken extends React.Component {
             case TRANSFER:
                 this.transferTokens(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract, this.state.rdTokenUnit);
                 break;
+            case APPROVE:
+                this.approveAmount(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract, this.state.rdTokenUnit);
+                break;
+            case ALLOWANCE:
+                this.getAllowance(this.state.userAddress, this.state.otherAddress, this.state.rdTokenContract);
+                break;
             default:
                 console.log('Nothing....')
                 break;
 
         }
     }
+
+    getAllowance = (userAddress, otherAddress, rdTokenContract) => {
+
+        if (!userAddress || !otherAddress || !rdTokenContract) {
+            console.error('Error in transferTokens, invalid parameters.')
+            return
+        }
+
+        try {
+            rdTokenContract
+                .methods
+                .allowance(userAddress, otherAddress)//Owner , spender
+                .call({
+                    from: userAddress,
+                }).then(allowanceAmount => {
+                    const convertedAllowance = amountFromToken(allowanceAmount, CONTRACT_DECIMALS)
+                    console.log(`${userAddress} allowed to spend ${otherAddress} the amount of ${convertedAllowance} RDT`)
+                    this.setState({
+                        balanceAtAddress: `( ${convertedAllowance} RDT)`
+                    })
+                }).catch(err => console.error('Error during amount approvation :', err))
+
+        } catch (error) {
+            console.log('Generic error in the approve method : ', error)
+        }
+
+    }
+
+    approveAmount = (userAddress, otherAddress, rdTokenContract, tokenAmount) => {
+
+        if (!userAddress || !otherAddress || !rdTokenContract || !tokenAmount) {
+            console.error('Error in transferTokens, invalid parameters.')
+            return
+        }
+
+        const converted = amountToToken(tokenAmount, CONTRACT_DECIMALS)
+
+        try {
+
+            rdTokenContract
+                .methods
+                .approve(otherAddress, converted)
+                .estimateGas({
+                    from: userAddress
+                }).then(gas => {
+
+                    rdTokenContract
+                        .methods
+                        .approve(otherAddress, converted)
+                        .send({
+                            from: userAddress,
+                            gas,
+                            gasPrice: 200000000000,
+                        }).then(res => {
+
+                            if (res) {
+                                console.log(`Approved ${converted} RDT for the address ${otherAddress}`);
+                            } else {
+                                console.error(`Error approving ${converted} RDT for the address ${otherAddress}`);
+                            }
+
+                        }).catch(err => console.error('Error during amount approvation :', err))
+
+                }).catch(err => console.error('Error while estimating gas for approve method', err))
+
+        } catch (error) {
+            console.log('Generic error in the approve method : ', error)
+        }
+
+    }
+
 
     transferTokens = (userAddress, otherAddress, rdTokenContract, tokenAmount) => {
 
@@ -77,19 +157,17 @@ export default class RDToken extends React.Component {
         }
 
         try {
-
+            const converted = amountToToken(tokenAmount, CONTRACT_DECIMALS)
             rdTokenContract
                 .methods
-                .transfer(otherAddress, tokenAmount).estimateGas({
+                .transfer(otherAddress, converted).estimateGas({
                     from: userAddress,
                 }).then(gas => {
 
-                    console.log(`transferTokens gas estimation ${gas}`)
-                    const converted = tokenAmount * Math.pow(10, CONTRACT_DECIMALS)
-                    console.log('Converted ', converted)
+                    console.log(`transferTokens gas estimation ${gas} for the token amount ${converted}`)
                     rdTokenContract
-                    .methods
-                        .transfer(otherAddress, tokenAmount)
+                        .methods
+                        .transfer(otherAddress, converted)
                         .send({
                             from: userAddress,
                             gas,
@@ -117,12 +195,13 @@ export default class RDToken extends React.Component {
         try {
 
             rdTokenContract.methods
-            .balanceOf(address)
+                .balanceOf(address)
                 .call({ from: userAddress })
                 .then(balance => {
-                    console.log(`The balance for the adddress ${address} is ${balance} RDT`)
+                    const conv = amountFromToken(balance, CONTRACT_DECIMALS)
+                    console.log(`The balance for the adddress ${address} is ${conv} RDT`)
                     this.setState({
-                        balanceAtAddress: `( ${balance} RDT)`
+                        balanceAtAddress: `( ${conv} RDT)`
                     })
                 }).catch(err => console.error(`Error while invoking totalSupply : `, err))
 
@@ -139,20 +218,23 @@ export default class RDToken extends React.Component {
 
         if (!userAddress || !rdTokenContract) {
             console.error('Error in getTotalSuppy, on or more input parameter is invalid.')
-            return
+            return 0
         }
 
-        rdTokenContract.methods.totalSupply().call({
-            from: userAddress,
-        }).then(res => {
-            console.log(`Total supply : `, res)
-            this.setState({
-                totalSupply: `( ${res} RDT )`
-            })
-            return res
-        }).catch(err => console.error(`Error while invoking totalSupply : `, err))
+        rdTokenContract
+            .methods
+            .totalSupply()
+            .call({
+                from: userAddress,
+            }).then(res => {
+                //Contract total supply is expressd in real units (e.g. 21.000.000 millions), that's why we need amountToToken
+                console.log(`Total supply : ${amountToToken(res, CONTRACT_DECIMALS)}`)
+                this.setState({
+                    totalSupply: res,
+                })
+            }).catch(err => console.error(`Error while invoking totalSupply : `, err))
 
-        return '...gathering'
+        return 0
     }
 
     isButtonDisabled = () => {
@@ -207,6 +289,12 @@ export default class RDToken extends React.Component {
 
                         <button onClick={() => this.onOperationClick(TRANSFER)}
                             disabled={this.isButtonDisabled()}> Transfer </button>
+
+                        <button onClick={() => this.onOperationClick(APPROVE)}
+                            disabled={this.isButtonDisabled()}> Approve </button>
+
+                        <button onClick={() => this.onOperationClick(ALLOWANCE)}
+                            disabled={this.isButtonDisabled()}> Allowance </button>
 
                         <button onClick={() => this.clearForm()}> Clear </button>
                     </div>

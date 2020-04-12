@@ -6,6 +6,7 @@ import { getContractAddressFromStoreByName } from '../bl/utility'
 import {
     FAUCET_CONTRACT_NAME,
     EHTER_UNIT_NAME,
+    RDTOKEN_FAUCET_CONTRACT_NAME,
 } from '../common'
 
 const WITHDRAW = 'withdraw';
@@ -29,12 +30,19 @@ export default class Faucet extends React.Component {
                     gasPrice: '20000000000',// default gas price in wei, 20 gwei in this case */
                 }),
             faucetBalance: undefined,
+            destinationAddress: "",
         }
     }
 
     onChangeAmount = (event) => {
         this.setState({
             amount: event.target.value
+        })
+    }
+
+    onChangeDestAddress = (event) => {
+        this.setState({
+            destinationAddress: event.target.value
         })
     }
 
@@ -49,7 +57,7 @@ export default class Faucet extends React.Component {
         switch (selection) {
 
             case WITHDRAW:
-                this.withdrawFunds(web3, contract, amount)
+                this.withdrawFunds(web3, contract, amount, userAddress)
                 break;
             case DEPOSIT:
                 this.depositFunds(contractAddress, web3, userAddress, amount)
@@ -67,13 +75,19 @@ export default class Faucet extends React.Component {
     }
 
     withdrawFunds = (web3, contract, amount, userAddress) => {
+        const destinationAddr = this.state.destinationAddress
         if (amount <= 0) {
             console.error(`Aborting funds deposit, amount is invalid ${amount}`)
             return
         }
 
-        const wei = web3.utils.toWei(String(amount), EHTER_UNIT_NAME)
-        contract.methods.withdraw(wei)
+        const convertedAmount = this.props.withdrawValueConverter(amount,web3);
+        const userFrom = destinationAddr && destinationAddr.length && destinationAddr !== '' ? destinationAddr : userAddress;
+        console.log('from ', userFrom, convertedAmount)
+
+        try {
+            
+            contract.methods.withdraw(convertedAmount)
             .estimateGas({
                 from: userAddress,
             }).then(gesEst => {
@@ -84,17 +98,21 @@ export default class Faucet extends React.Component {
                  * send is nededed; a new transacation will be generated
                  * on the blockchain
                 */
-                contract.methods.withdraw(wei).send({
+                contract.methods.withdraw(convertedAmount).send({
                     from: userAddress,
                     gas: gesEst,
                     gasPrice: 200000000000,
-                }).then(res => console.log(`Amount withdrawen from faucet ${wei}`, res))
+                }).then(res => console.log(`Amount withdrawen from faucet ${this.props.balanceGetterConverter(convertedAmount)}`,res))
                     .catch(err => console.error(`Error while withdrawing ether `, err))
 
             })
             .catch(err => {
                 console.log(`Withdraw funds error `, err)
             })
+            
+        } catch (error) {
+            console.error('Generic error withdrawFunds method : ',error)
+        }
 
     }
 
@@ -111,7 +129,7 @@ export default class Faucet extends React.Component {
             from: userAddress,
         }).then(res => {
             console.log(`Faucet balance :  ${res}`)
-            const balanceInEther = '( ' + web3.utils.fromWei(String(res), EHTER_UNIT_NAME) + ' ETH )'
+            const balanceInEther = this.props.balanceGetterConverter(res, web3);
             this.setState({
                 faucetBalance: balanceInEther,
             })
@@ -159,13 +177,22 @@ export default class Faucet extends React.Component {
         return (
             <article>
                 <div className="Faucet">
-                    <h3>Faucet Component {this.state.faucetBalance}</h3>
+                    <h3>{`${this.props.title} ${this.state.faucetBalance ? this.state.faucetBalance : ""}`}</h3>
                     <label>Amount: </label>
                     <input type="number" value={this.state.amount} onChange={this.onChangeAmount} min="0"></input>
+                    {
+                        this.props.contractName === RDTOKEN_FAUCET_CONTRACT_NAME ?
+                            <div>
+                                <label>Address: </label>
+                                <input type="text" value={this.state.destinationAddress} onChange={this.onChangeDestAddress}></input>
+                            </div> : undefined
+                    }
                     <div className="Faucet-Operations">
                         <button onClick={() => this.onOperationClick(BALANCE)}>Balance</button>
                         <button onClick={() => this.onOperationClick(WITHDRAW)}>Withdraw</button>
-                        <button onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
+                        <button
+                            disabled={this.props.contractName === RDTOKEN_FAUCET_CONTRACT_NAME}
+                            onClick={() => this.onOperationClick(DEPOSIT)}>Deposit</button>
                     </div>
                 </div>
             </article>
@@ -177,10 +204,16 @@ export default class Faucet extends React.Component {
 export function FaucetDashboardBuilder(nextProps, userAddress, web3) {
     const storedContractAddress = getContractAddressFromStoreByName(FAUCET_CONTRACT_NAME)
     nextProps.selectedContractComponent = storedContractAddress ?
-        <Faucet userAddress={userAddress}
+        <Faucet
+            title="Faucet"
+            contractName={FAUCET_CONTRACT_NAME}
+            userAddress={userAddress}
             contractAddress={window.localStorage.getItem(FAUCET_CONTRACT_NAME)}
             json={FaucetJSON}
-            web3={web3} />
+            web3={web3}
+            balanceGetterConverter={(val, web3) => '( ' + web3.utils.fromWei(String(val), EHTER_UNIT_NAME) + ' ETH )'}
+            withdrawValueConverter={(amount, web3) => web3.utils.toWei(String(amount), EHTER_UNIT_NAME)}
+        />
         : undefined;
     nextProps.selectedContractJSON = FaucetJSON;
     nextProps.selectedContractName = FAUCET_CONTRACT_NAME;

@@ -1,7 +1,7 @@
 import React from 'react';
 import './RDTokenFaucetAdditional.css'
 import debounce from 'lodash/debounce'
-import { _RDTokenOwner, _RDTokenContract } from '../../common'
+import { getValuesFromLocalStorage } from '../../bl/utility'
 
 export default class RDTokenFaucetAdditional extends React.Component {
 
@@ -9,10 +9,6 @@ export default class RDTokenFaucetAdditional extends React.Component {
         super(props);
         this.state = {
             componentParameters: props.constructorParamList.map(() => ''),
-            paramIndexMap: {
-                _RDTokenContract: props.constructorParamList.indexOf(_RDTokenContract),
-                _RDTokenOwner: props.constructorParamList.indexOf(_RDTokenOwner),
-            },
             updateParentState: debounce((parameters) => { this.props.onUpdateParams([...parameters]) }, 800)
         }
     }
@@ -29,24 +25,39 @@ export default class RDTokenFaucetAdditional extends React.Component {
         this.state.updateParentState(parameters);
     }
 
+    bodyTemplate = () => {
+        const body = this.props.constructorParamList.map((it, index) =>
+        { 
+            const inputElem = this.makeInput(this.props.contractName+'.'+it, index)
+            return <div
+                className="RDTokenAdditional-BodyElem"
+                key={index.toString()}
+            >
+            <label>{it}</label>
+            {inputElem}
+            </div>}
+        );
+        return body;
+    }
+
+    makeInput = (paramName, propIndex) => {
+        const value = getValuesFromLocalStorage(paramName)
+        return value ?
+            <input type="text"
+                value={value}
+                readOnly
+            />
+            : <input type="text"
+                value={this.state.componentParameters[propIndex]}
+                onChange={event => this.onContractAddressChange(event, propIndex)}
+            />
+    }
+
     render() {
         return (
-            <article>
-
+            <article className="RDTokenAdditional-Main">
                 <div className="RDTokenAdditional">
-
-                    <label>RDToken contract address : </label>
-                    <input type="text"
-                        value={this.state.componentParameters[this.state.paramIndexMap[_RDTokenContract]]}
-                        onChange={event => this.onContractAddressChange(event, this.state.paramIndexMap[_RDTokenContract])}
-                    />
-
-                    <label>RDToken owner address : </label>
-                    <input type="text"
-                        value={this.state.componentParameters[this.state.paramIndexMap[_RDTokenOwner]]}
-                        onChange={event => this.onContractAddressChange(event, this.state.paramIndexMap[_RDTokenOwner])}
-                    />
-
+                    {this.bodyTemplate()}
                 </div>
             </article>
         );
