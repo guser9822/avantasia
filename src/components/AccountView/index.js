@@ -16,7 +16,8 @@ export default class AccountView extends React.Component {
             userAddress: userAddr ? userAddr : "",
             password: '',
             authorized: isAuthorized,
-            web3: undefined,
+            web3: new Web3(new Web3.providers.HttpProvider("http://localhost:8545")),//Parity node
+            accountBalance: '',
         }
     }
 
@@ -44,27 +45,41 @@ export default class AccountView extends React.Component {
 
             const userAddr = this.state.userAddress;
             const password = this.state.password;
-            const newWEB3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));//Parity node
-            const checksummedAddr = newWEB3.utils.toChecksumAddress(userAddr)
+            const web3 = this.state.web3;
+            const checksummedAddr = web3.utils.toChecksumAddress(userAddr)
 
-            const encryptedPass = newWEB3.utils.sha3(password)
-            console.log('Encrypted pass ', encryptedPass);
-
-            newWEB3
+            web3
                 .eth
                 .personal
-                .unlockAccount(checksummedAddr, this.state.password)
+                .unlockAccount(checksummedAddr, password)
                 .then(res => {
                     console.log(`Account ${checksummedAddr} unlocked !`)
-                    const payLoad = {
-                        web3: newWEB3,
+
+                    const payload = {
+                        web3,
                         authorized: true,
                         userAddress: checksummedAddr,
                     }
-                    this.setState(payLoad);
-                    window.sessionStorage.setItem('authorized', true);
-                    window.sessionStorage.setItem('userAddress', checksummedAddr);
-                    this.props.authorization(payLoad);
+
+                    return payload
+                }).then(payload => {
+
+                    web3
+                        .eth
+                        .getBalance(checksummedAddr)
+                        .then(accountBalance => {
+
+                            const formatAccount = `( ${accountBalance} )`
+
+                            this.setState({ payload, accountBalance: formatAccount });
+                            window.sessionStorage.setItem('authorized', true);
+                            window.sessionStorage.setItem('userAddress', checksummedAddr);
+                            this.props.authorization(payload);
+
+                        }).catch(err => {
+                            console.error('Error while asking for account balance : ', err)
+                        })
+
                 }).catch(err => {
                     console.error('Error while connecting : ', err)
                 });
@@ -94,6 +109,27 @@ export default class AccountView extends React.Component {
         }
     }
 
+    onClickCreate = () => {
+
+        const password = this.state.password;
+        const web3 = this.state.web3;
+
+        try {
+
+            web3
+                .eth
+                .personal
+                .newAccount(password).then(account => {
+                    console.log(`New account created with address ${account}`);
+                    window.sessionStorage.setItem('userAddress', account);
+                }).catch(err => console.log('Error while creating a new account : ', err))
+
+        } catch (error) {
+            console.error('Error while creating a new account : ', error)
+        }
+
+    }
+
     isDisabled = () => {
         return this.state.authorized;
     }
@@ -109,7 +145,7 @@ export default class AccountView extends React.Component {
     render() {
         return (
             <article>
-                <h5>Login</h5>
+                <h5>Login {this.state.accountBalance}</h5>
                 <div className="Account-View-Body">
                     <label>Address : </label>
                     <input
@@ -125,18 +161,26 @@ export default class AccountView extends React.Component {
                         value={this.state.password}
                         onChange={this.changePasswordHandle}
                     />
-                    <div>
+                    <div className="AccountView-Buttons-Action">
                         <button className="AccountView-ConnectButton"
                             onClick={this.onClickAccountConnect}
                             disabled={this.isConnectButtonDisabled()}
                         >
                             Connect
-                    </button>
+                        </button>
+
                         <button className="AccountView-ConnectButton"
                             onClick={this.onClickLogout}
                         >
                             Logout
-                    </button>
+                        </button>
+
+                        <button className="AccountView-ConnectButton"
+                            onClick={this.onClickCreate}
+                        >
+                            Create
+                        </button>
+
                     </div>
                 </div>
             </article>

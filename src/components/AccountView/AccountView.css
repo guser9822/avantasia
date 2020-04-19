@@ -5,5 +5,10 @@
 
 .AccountView-ConnectButton {
     margin-top: 10px;
-    width: 100px;
+    width: 130px;
+}
+
+.AccountView-Buttons-Action{
+    display: flex;
+    justify-content: space-between;
 }
