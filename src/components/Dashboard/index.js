@@ -1,21 +1,21 @@
 import React from 'react';
-import './Dashboard.css'
+import './Dashboard.css';
 
 //LIB
-import Web3 from 'web3'
 import ContractOperations from '../bl/blockchain-bl'
 import {
     persistConstructorParamsIntoLocalStorage,
-} from '../bl/utility'
+    getValuesFromSessionStorage,
+} from '../bl/utility';
+
 
 //Components
-import Web3Connector from '../Web3Connector'
-import Modal from '../Modal/index'
-import DestroyModal from '../DestroyModal'
-import { FaucetDashboardBuilder } from '../Faucet'
-import { RDTokenDashboardBuilder } from '../RDToken'
-import { RDTokenFaucetDashboardBuilder } from '../RDTokenFaucet'
-
+import Modal from '../Modal/index';
+import DestroyModal from '../DestroyModal';
+import { FaucetDashboardBuilder } from '../Faucet';
+import { RDTokenDashboardBuilder } from '../RDToken';
+import { RDTokenFaucetDashboardBuilder } from '../RDTokenFaucet';
+import AccountView from '../AccountView'
 //CONSTS
 import {
     FAUCET_CONTRACT_NAME,
@@ -23,7 +23,7 @@ import {
     RDTOKEN_FAUCET_CONTRACT_NAME,
     SAVE_COMMAND,
     REMOVE_COMMAND,
-} from '../common'
+} from '../common';
 
 
 //MODALS
@@ -34,9 +34,9 @@ export default class Dashboard extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            authorized: window.sessionStorage.getItem('authorized') ? true : false,
-            web3: window.sessionStorage.getItem('authorized') ? new Web3(Web3.givenProvider) : undefined,
-            userAddress: window.sessionStorage.getItem('userAddress'),
+            authorized: getValuesFromSessionStorage('authorized'),
+            web3: undefined,
+            userAddress: getValuesFromSessionStorage('userAddress'),
             showDestroyModal: false,
             ...this.initState()
         }
@@ -64,14 +64,12 @@ export default class Dashboard extends React.Component {
         }
     }
 
-    authorizationHandle = (_userAddress) => {
+    authorizationHandle = (authObj) => {
         this.setState({
-            web3: new Web3(Web3.givenProvider),
-            authorized: true,
-            userAddress: _userAddress[0],
+            web3: authObj.web3,
+            authorized: authObj.authorized,
+            userAddress: authObj.userAddress,
         })
-        window.sessionStorage.setItem('authorized', true)
-        window.sessionStorage.setItem('userAddress', _userAddress[0])
     }
 
     deployContractClickHandle = () => {
@@ -290,18 +288,21 @@ export default class Dashboard extends React.Component {
 
     render() {
 
-        const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected"
-        const ContractAdditional = this.state.additionalComponent ? this.state.additionalComponent : undefined
+        const statusClass = this.state.authorized ? "Status-Block Connected" : "Status-Block Disconnected";
+        const ContractAdditional = this.state.additionalComponent ? this.state.additionalComponent : undefined;
 
         return (
             <article>
                 <div>
-                    <div className="Intes-Block">
-                        <h1> Ethereum dashboard </h1>
-                        <div className={statusClass}></div>
+                    <div className="Dashboard-Header">
+                        <div className="Dashboard-Status">
+                            <h1> Ethereum dashboard </h1>
+                            <div className={statusClass}></div>
+                        </div>
+                        <div className="Dashboard-AccountView">
+                            <AccountView authorization={this.authorizationHandle}/>
+                        </div>
                     </div>
-
-                    <Web3Connector authorization={this.authorizationHandle} />
 
                     <div className="ContractInfo-Block">
 

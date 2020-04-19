@@ -1,11 +1,23 @@
-.Intes-Block{
+.Dashboard-Header {
     display: flex;
+    flex-direction: column;
     width: 100%;
-    align-items: center;
     border: 1px;
     border-style: solid;
     border-radius: 5px;
     margin-bottom: 20px;
+}
+
+.Dashboard-Status{
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+.Dashboard-AccountView {
+    width: 80%;
+    margin-left: 10px;
+    margin-bottom: 10px;
 }
 
 .ContractInfo-Block {

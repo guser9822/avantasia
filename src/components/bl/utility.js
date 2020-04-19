@@ -21,6 +21,14 @@ export function getValuesFromLocalStorage(key) {
         ? paramValue : undefined
 }
 
+export function getValuesFromSessionStorage(key) {
+    const paramValue = window.sessionStorage.getItem(key)
+    return paramValue !== 'null' &&
+        paramValue !== undefined &&
+        paramValue !== null
+        ? paramValue === 'true' ? true : paramValue === 'false' ? false : paramValue : undefined
+}
+
 export function persistConstructorParamsIntoLocalStorage(contractName, contractABI, paramValues, action) {
 
     if (!contractName ||
